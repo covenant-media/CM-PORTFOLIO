@@ -88,35 +88,34 @@ export const SYSTEM_ROLES: { key: string; label: string; description: string; pe
   },
 ];
 
-function resolve(level: PermissionLevel | undefined, fallback: PermissionLevel): PermissionLevel {
-  return level ?? fallback;
+/**
+ * The effective level a role holds on one module.
+ *
+ * Wildcard `*` entries are the default for a role; an explicit entry for a module overrides the
+ * wildcard *including* `none`, which is how an owner locks a section (account, settings) against
+ * an otherwise capable role. A role nobody recognises — or a session whose user row has no role —
+ * resolves to `none`: authorization fails closed, because the alternative is a default of access.
+ */
+function effectiveLevel(role: string | undefined, module: string, roleMap?: RolePermissions): PermissionLevel {
+  const key = role ?? '';
+  // The owner keeps control even if the role table was never seeded or wiped mid-session.
+  if (key === 'owner' && !roleMap) return 'manage';
+  const system = SYSTEM_ROLES.find((r) => r.key === key);
+  const permissions = roleMap ?? system?.permissions;
+  if (!permissions) return 'none';
+  return permissions[module] ?? permissions['*'] ?? 'none';
 }
 
 /**
  * Returns true when `role` may perform `required` on `module`.
- * Wildcard '*' entries act as the default; explicit entries override them.
+ * Called on every CMS mutation — the UI hides what it cannot do, the server refuses it.
  */
 export function can(role: string | undefined, module: string, required: PermissionLevel, roleMap?: RolePermissions): boolean {
-  const key = role ?? 'owner';
-  const system = SYSTEM_ROLES.find((r) => r.key === key);
-  const permissions: RolePermissions = roleMap ?? system?.permissions ?? { '*': 'none' };
-  // Owners always win, even if the DB row is missing.
-  if (key === 'owner' && !roleMap) return LEVEL_RANK.manage >= LEVEL_RANK[required];
-  const specific = permissions[module];
-  const wildcard = permissions['*'];
-  if (specific === 'none' && wildcard && wildcard !== 'none') {
-    return LEVEL_RANK[resolve(wildcard, 'none')] >= LEVEL_RANK[required];
-  }
-  const effective = resolve(specific, resolve(wildcard, 'none'));
-  return LEVEL_RANK[effective] >= LEVEL_RANK[required];
+  return LEVEL_RANK[effectiveLevel(role, module, roleMap)] >= LEVEL_RANK[required];
 }
 
 export function levelFor(role: string | undefined, module: string, roleMap?: RolePermissions): PermissionLevel {
-  const key = role ?? 'owner';
-  const system = SYSTEM_ROLES.find((r) => r.key === key);
-  const permissions: RolePermissions = roleMap ?? system?.permissions ?? { '*': 'none' };
-  if (key === 'owner' && !roleMap) return 'manage';
-  return permissions[module] ?? permissions['*'] ?? 'none';
+  return effectiveLevel(role, module, roleMap);
 }
 
 export function permissionLabel(level: PermissionLevel): string {

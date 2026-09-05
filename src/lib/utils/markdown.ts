@@ -31,7 +31,7 @@ const SANITIZE: sanitizeHtml.IOptions = {
         ...(attribs.href && !attribs.href.startsWith('/') ? { target: '_blank', rel: 'noopener noreferrer nofollow' } : {}),
       },
     }),
-    h1: (tagName) => ({ tagName: 'h2', attribs: {} }),
+    h1: () => ({ tagName: 'h2', attribs: {} }),
     img: (tagName, attribs) => ({
       tagName,
       attribs: { ...attribs, loading: 'lazy', decoding: 'async' },

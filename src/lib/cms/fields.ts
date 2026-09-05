@@ -168,8 +168,16 @@ function coerceScalar(field: FieldDef, raw: unknown): CoerceResult {
     case 'number':
     case 'money': {
       if (raw === '' || raw === null || raw === undefined) return { value: null };
-      const num = typeof raw === 'number' ? raw : Number(String(raw).replace(/[^0-9.\-]/g, ''));
-      if (!Number.isFinite(num)) return { error: `${field.label} must be a number` };
+      // Thousands separators and a currency symbol are typing convenience; text with no
+      // digits at all is a mistake, and quietly storing 0 instead of reporting it would turn
+      // "TBD" into a real price.
+      let num = typeof raw === 'number' ? raw : Number(String(raw).replace(/[\s,\u00a0]/g, ''));
+      if (!Number.isFinite(num)) {
+        const digits = typeof raw === 'string' ? raw.replace(/[^0-9.\-]/g, '') : '';
+        if (!/\d/.test(digits)) return { error: `${field.label} must be a number` };
+        num = Number(digits);
+        if (!Number.isFinite(num)) return { error: `${field.label} must be a number` };
+      }
       if (field.min !== undefined && num < field.min) return { error: `${field.label} must be ${field.min} or more` };
       if (field.max !== undefined && num > field.max) return { error: `${field.label} must be ${field.max} or less` };
       return { value: num };
@@ -226,6 +234,13 @@ function coerceScalar(field: FieldDef, raw: unknown): CoerceResult {
       for (let i = 0; i < Math.min(rows.length, field.max ?? 120); i += 1) {
         const row = rows[i];
         if (!row || typeof row !== 'object') continue;
+        // A row the author added and then abandoned is not a validation failure — it is
+        // dropped, exactly as a saved row that later had every cell cleared is.
+        const isBlankRow = itemFields.every((sub) => {
+          const cell = (row as Record<string, unknown>)[sub.key];
+          return cell === null || cell === undefined || cell === '' || (Array.isArray(cell) && cell.length === 0);
+        });
+        if (isBlankRow) continue;
         const record: Record<string, unknown> = {};
         for (const sub of itemFields) {
           const res = coerceScalar(sub, (row as Record<string, unknown>)[sub.key]);

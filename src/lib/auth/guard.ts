@@ -2,8 +2,9 @@
  * Request guards shared by every admin route handler and the admin pages.
  * Authorization is enforced server-side on every mutation (PRD §17).
  */
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { readSession, verifyCsrf, type AdminContext } from './session';
+import { CSRF_COOKIE, readSession, verifyCsrf, type AdminContext } from './session';
 import { can, levelFor, type ModuleKey, type PermissionLevel } from './permissions';
 import { getDb, newId, nowIso } from '../db';
 
@@ -22,11 +23,11 @@ export interface AuthedContext extends AdminContext {
   permission: PermissionLevel;
 }
 
-export async function getAdminContext(request: Request): Promise<AdminContext | null> {
-  return readSession();
-}
-
-/** Throws 401/403 unless the caller may perform `required` on `module`. */
+/** Throws 401/403 unless the caller may perform `required` on `module`.
+ *
+ * `request` is only needed to read the CSRF token off the posted body; the session itself
+ * comes from cookies, which is why the page-level guards do not take a request at all.
+ */
 export async function requireAdmin(request: Request, module: ModuleKey, required: PermissionLevel = 'write'): Promise<AuthedContext> {
   const ctx = await readSession();
   if (!ctx) throw new ApiError(401, 'Sign in to continue');
@@ -38,6 +39,43 @@ export async function requireAdmin(request: Request, module: ModuleKey, required
     throw new ApiError(403, 'Security token missing or expired. Reload the page and try again.');
   }
   return { ...ctx, request, permission: levelFor(ctx.user.role, module, roleMap) };
+}
+
+/** Session + permission check for server actions (no Request object available). */
+export async function requirePermission(
+  module: ModuleKey,
+  required: PermissionLevel = 'write',
+): Promise<AdminContext & { permission: PermissionLevel }> {
+  const ctx = await readSession();
+  if (!ctx) throw new ApiError(401, 'Sign in to continue');
+  const roleMap = await loadRolePermissions(ctx.user.role);
+  if (!can(ctx.user.role, module, required, roleMap)) {
+    throw new ApiError(403, `Your role (${ctx.user.role}) cannot ${required} this section`);
+  }
+  return { ...ctx, permission: levelFor(ctx.user.role, module, roleMap) };
+}
+
+/**
+ * The role's permission map as customised in the database, when one exists.
+ *
+ * Page-level permission checks pass this through so what the CMS offers matches what the
+ * mutations accept: without it the UI would fall back to the built-in role definitions and a
+ * customised role would end up arguing with itself.
+ */
+export async function permissionsForRole(role: string): Promise<Record<string, PermissionLevel> | undefined> {
+  return loadRolePermissions(role);
+}
+
+/**
+ * Server actions are already same-origin-only and the session cookie is Lax; the token
+ * check is the explicit second lock so a forged cross-site POST cannot write.
+ */
+export async function assertCsrf(token: string | null | undefined): Promise<void> {
+  const jar = await cookies();
+  const cookieValue = jar.get(CSRF_COOKIE)?.value;
+  if (!cookieValue || !token || cookieValue !== token) {
+    throw new ApiError(403, 'Security token missing or expired. Reload the page and try again.');
+  }
 }
 
 const roleCache = new Map<string, { at: number; map: Record<string, PermissionLevel> | undefined }>();

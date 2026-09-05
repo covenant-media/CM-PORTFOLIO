@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
 
+// The sandbox/preview host must be allowed as a dev origin, otherwise hot-reload
+// assets are treated as cross-origin. Add any other local host the CMS is opened
+// from via CM_ALLOWED_ORIGINS="host1,host2".
+const devOrigins = (process.env.CM_ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
+if (process.env.E2B_SANDBOX_ID) devOrigins.push(`3000-${process.env.E2B_SANDBOX_ID}.e2b.app`);
+
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -46,8 +55,12 @@ const nextConfig = {
       },
     ];
   },
+  ...(devOrigins.length ? { allowedDevOrigins: Array.from(new Set(devOrigins)) } : {}),
   experimental: {
     optimizePackageImports: ['framer-motion'],
+    // Worth it on small machines: fewer cached modules in the dev server, at the cost
+    // of slightly slower rebuilds. Turn off with CM_LOW_MEM=0.
+    webpackMemoryOptimizations: process.env.CM_LOW_MEM !== '0',
   },
 };
 

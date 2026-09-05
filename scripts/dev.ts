@@ -115,14 +115,28 @@ async function main() {
     url = await waitForDb();
   }
 
+  // The sandbox this runs in has ~4 GB for everything, so the bundler and the
+  // server heap are both capped: turbopack dev uses roughly half the memory of
+  // webpack dev, and a bounded heap means V8 collects instead of OOM-killing the box.
+  // CM_BUNDLER=webpack switches back if a webpack-only config is being tested.
+  const bundler = process.env.CM_BUNDLER === 'webpack' ? 'webpack' : 'turbopack';
   run(
     'node',
-    [join(ROOT, 'node_modules', 'next', 'dist', 'bin', 'next'), 'dev', '-p', APP_PORT, '-H', '0.0.0.0'],
+    [
+      join(ROOT, 'node_modules', 'next', 'dist', 'bin', 'next'),
+      'dev',
+      ...(bundler === 'turbopack' ? ['--turbopack'] : []),
+      '-p',
+      APP_PORT,
+      '-H',
+      '0.0.0.0',
+    ],
     '[app]',
     {
       DATABASE_URL: url,
       DB_DRIVER: url ? 'postgres' : 'pglite',
       NEXT_TELEMETRY_DISABLED: '1',
+      NODE_OPTIONS: process.env.NODE_OPTIONS ?? '--max-old-space-size=2048',
     },
   );
 }

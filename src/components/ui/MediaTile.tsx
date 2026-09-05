@@ -11,6 +11,8 @@ import { useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import type { AssetRef, VideoRef } from '@/lib/types/content';
 import { cx, formatDuration } from '@/lib/utils/text';
+import { plainSrc } from '@/components/ui/Media';
+import { trackClientEvent } from '@/lib/analytics/client';
 import { Icon } from './Icon';
 import { Marquee } from './Marquee';
 import { PosterFallback } from './Media';
@@ -92,7 +94,9 @@ export function MediaTile({
 
   const open = () => {
     const list = items?.length ? items : video ? [{ kind: 'video' as const, video, title: video.title, meta }] : [];
-    if (list.length) emitLightbox(list, index);
+    if (!list.length) return;
+    trackClientEvent('lightbox_open', video && !items?.length ? 'video' : 'gallery');
+    emitLightbox(list, index);
   };
 
   const body = (
@@ -101,6 +105,7 @@ export function MediaTile({
         {src ? (
           <Image
             src={src}
+            unoptimized={plainSrc(src)}
             alt={poster?.alt ?? title}
             fill
             sizes={sizes ?? '(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 32vw'}

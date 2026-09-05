@@ -96,6 +96,27 @@ function bestSrc(asset: AssetRef, cssWidth: number, variant: 'auto' | 'full' | '
  * CMS image with variant selection, blur-up and a labelled placeholder when the
  * record has no asset yet. `fill` layouts keep CLS at zero.
  */
+/**
+ * Remote sources (video thumbnails, third-party CDNs) are fetched by the browser directly.
+ * Routing them through the image optimizer means the server has to reach out for them, which
+ * fails on hosts without outbound access and only adds a hop everywhere else. Local uploads —
+ * the images the CMS actually stores — keep the full AVIF/WebP treatment.
+ */
+export function isExternalSrc(src: string | null | undefined): boolean {
+  return /^https?:\/\/\S+/i.test(String(src ?? ''));
+}
+
+/**
+ * Sources that must bypass the image optimiser: remote hosts (see above) and anything under
+ * /uploads, which is written after the build and therefore missing from the optimiser's
+ * snapshot of public files. Those images are served straight from disk by /uploads/[...path],
+ * and the storage driver has already produced sized WebP variants for them.
+ */
+export function plainSrc(src: string | null | undefined): boolean {
+  const value = String(src ?? '');
+  return isExternalSrc(value) || value.startsWith('/uploads/');
+}
+
 export function CmImage({
   asset,
   alt,
@@ -137,6 +158,7 @@ export function CmImage({
     <div className={cx('relative isolate overflow-hidden bg-[var(--color-ink-850)]', rounded, className)} style={{ aspectRatio: aspect }}>
       <Image
         src={bestSrc(asset, 1000, variant)}
+        unoptimized={plainSrc(bestSrc(asset, 1000, variant))}
         alt={label ?? ''}
         fill
         sizes={sizes}

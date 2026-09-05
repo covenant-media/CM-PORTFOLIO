@@ -32,7 +32,6 @@ export function PublicForm({ config, action, token, turnstileSiteKey, successMes
   const [turnstile, setTurnstile] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
   const honeypot = useRef<HTMLInputElement | null>(null);
-  const renderedAt = useRef(Date.now());
   const formRef = useRef<HTMLFormElement | null>(null);
 
   // Optional Cloudflare Turnstile — only fetched when a site key is configured.

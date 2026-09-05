@@ -62,10 +62,14 @@ export function detectVideoSource(input: string): DetectedSource {
   if (/youtube\.com|youtu\.be/i.test(host)) {
     const match = YOUTUBE_PATTERNS.map((re) => raw.match(re)).find(Boolean);
     const id = match?.[1] ?? url.searchParams.get('v');
+    // Shorts keep their own canonical form: the layout (and the vertical decision downstream)
+    // reads the URL back, so flattening everything to /watch would lose the shape.
+    const isShort = /youtube\.com\/shorts\//i.test(raw);
+    const canonical = id ? `https://www.youtube.com/${isShort ? `shorts/${id}` : `watch?v=${id}`}` : href;
     return {
       source: 'youtube',
       sourceId: id,
-      canonicalUrl: id ? `https://www.youtube.com/watch?v=${id}` : href,
+      canonicalUrl: canonical,
       embedUrl: id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1` : null,
       thumbnailCandidates: id
         ? [`https://i.ytimg.com/vi/${id}/maxresdefault.jpg`, `https://i.ytimg.com/vi/${id}/hqdefault.jpg`, `https://i.ytimg.com/vi/${id}/mqdefault.jpg`]

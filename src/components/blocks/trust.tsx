@@ -14,7 +14,6 @@ function Author({ item }: { item: TestimonialItem }) {
   return (
     <div className="mt-5 flex items-center gap-3 border-t border-[rgba(243,241,236,.09)] pt-4">
       {item.avatar?.url ? (
-        // eslint-disable-next-line @next/next/no-img-element
         <img src={item.avatar.url} alt={item.authorName ?? ''} className="size-9 rounded-full object-cover" loading="lazy" width={36} height={36} />
       ) : item.authorName ? (
         <span className="grid size-9 shrink-0 place-items-center rounded-full border border-[rgba(243,241,236,.14)] font-mono text-[0.6875rem] text-fg-muted">

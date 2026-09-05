@@ -65,6 +65,10 @@ const BLOCKED: RegExp[] = [
 export function looksSpammy(value: string): boolean {
   const text = (value ?? '').toLowerCase();
   if (text.length > 1600 && !/\s/.test(text.slice(0, 60))) return true;
+  // Bulk senders paste a trail of links; one or two are a genuine enquiry pointing at their own
+  // site, so the threshold sits deliberately above that.
+  const links = text.match(/https?:\/\//g);
+  if (links && links.length > 2) return true;
   return BLOCKED.some((re) => re.test(text));
 }
 

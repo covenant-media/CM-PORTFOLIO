@@ -3,7 +3,6 @@ import { resolveSite } from '@/lib/seo/metadata';
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const site = await resolveSite();
-  const disallow = ['/', '/admin', '/api', '/tech/resume'];
   return {
     rules: site.noindex
       ? [{ userAgent: '*', disallow: ['/'] }]

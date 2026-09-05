@@ -10,7 +10,6 @@
 import type { TableName } from '../db/tables';
 import type { FieldDef } from './fields';
 import {
-  BUDGET_BANDS,
   CERTIFICATION_STATUSES,
   CURRENCY_OPTIONS,
   DIVISION_OPTIONS,
@@ -27,10 +26,7 @@ import {
   SOCIAL_NETWORKS,
   SOCIAL_PLACEMENTS,
   STATUS_OPTIONS,
-  TECH_BUDGET_BANDS,
   TECH_CATEGORIES,
-  TECH_PROJECT_TYPE_OPTIONS,
-  TIMELINE_OPTIONS,
   VIDEO_FORM_OPTIONS,
 } from './options';
 

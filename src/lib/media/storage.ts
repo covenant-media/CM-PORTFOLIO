@@ -56,6 +56,21 @@ export interface StorageDriver {
 }
 
 const ROOT = process.env.CM_UPLOAD_DIR || path.join(process.cwd(), 'public', 'uploads');
+
+/** Containment for keys that arrive from a URL: `..` and look-alike siblings of ROOT fail. */
+function withinRoot(target: string): boolean {
+  const relative = path.relative(ROOT, target);
+  return relative.length > 0 && !relative.startsWith('..') && !path.isAbsolute(relative);
+}
+
+/**
+ * Uploads are typed by their bytes, and markup is never a media file: an SVG can carry a script,
+ * so it is refused even when it arrives named .png.
+ */
+export function looksLikeMarkup(buffer: Buffer): boolean {
+  const head = buffer.subarray(0, 512).toString('latin1').trimStart();
+  return /^(<\?xml|<!doctype|<svg[\s>]|<html[\s>]|<script|\[comment\])/i.test(head);
+}
 const PUBLIC_BASE = '/uploads';
 
 function safeExtension(filename: string): string {
@@ -74,14 +89,14 @@ const localDriver: StorageDriver = {
   kind: 'local',
   async put(buffer, { key }) {
     const target = path.join(ROOT, key);
-    if (!target.startsWith(ROOT)) throw new Error('Unsafe storage key');
+    if (!withinRoot(target)) throw new Error('Unsafe storage key');
     await mkdir(path.dirname(target), { recursive: true });
     await writeFile(target, buffer);
     return { key, url: `${PUBLIC_BASE}/${key}`, bytes: buffer.length };
   },
   async delete(key) {
     const target = path.join(ROOT, key);
-    if (!target.startsWith(ROOT)) return;
+    if (!withinRoot(target)) return;
     await unlink(target).catch(() => undefined);
   },
 };
@@ -225,7 +240,19 @@ export async function ingestFile(input: { buffer: Buffer; filename: string; mime
   const kind = opts.kindHint ?? sniffed ?? mapped;
   if (!kind) throw new Error('Unrecognised file format — upload a JPG, PNG, WebP, AVIF, GIF, MP4, WebM, MOV, MP3, WAV or PDF');
   if (sniffed && mapped && sniffed !== mapped) warnings.push('The reported content type differed from the file bytes; stored using the detected type.');
-  if (declared === 'image/svg+xml') throw new Error('SVG uploads are disabled for safety. Export as PNG or WebP.');
+  if (declared === 'image/svg+xml' || looksLikeMarkup(input.buffer)) {
+    throw new Error('SVG and markup uploads are disabled for safety. Export as PNG or WebP.');
+  }
+
+  // An image is only an image if it decodes. Checking now means a forged or truncated file
+  // never reaches the disk, and a media library row is never created for something unservable.
+  if (kind === 'image' && !opts.skipVariants) {
+    const probe = await loadSharp();
+    if (probe) {
+      const meta = await probe(input.buffer).metadata().catch(() => null);
+      if (!meta?.width || !meta.height) throw new Error('That file is not a readable image — re-export it from the original');
+    }
+  }
 
   const store = await storage();
   const key = objectKey(input.filename || `upload.${ext || kind}`, kind);
@@ -441,7 +468,7 @@ export async function assetReferences(assetId: string): Promise<{ total: number;
 /** Serves a locally stored object (used when CM_UPLOAD_DIR is outside public/). */
 export async function readLocalObject(key: string): Promise<{ buffer: Buffer; contentType: string } | null> {
   const target = path.join(ROOT, key);
-  if (!target.startsWith(ROOT)) return null;
+  if (!withinRoot(target)) return null;
   try {
     const buffer = await readFile(target);
     const ext = path.extname(target).toLowerCase().replace('.', '');

@@ -11,7 +11,7 @@ import { cx, truncate } from '@/lib/utils/text';
 import { blockProps } from '@/lib/cms/blocks';
 import type { SectionData, ServiceItem } from '@/lib/types/content';
 import { projectCards, crossDisciplineWork } from '@/lib/cms/content';
-import { SpotlightCard, FadeIn, CountUp } from '@/components/ui/Motion';
+import { SpotlightCard, FadeIn } from '@/components/ui/Motion';
 import { renderMarkdown } from '@/lib/utils/markdown';
 
 /* ── two worlds ───────────────────────────────────────────────────────────── */

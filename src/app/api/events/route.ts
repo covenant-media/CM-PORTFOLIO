@@ -19,6 +19,7 @@ const ALLOWED = new Set<EventName>([
   'form_error',
   'resume_download',
   'lightbox_open',
+  'nav_click',
   'search',
 ]);
 

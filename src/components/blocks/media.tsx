@@ -1,4 +1,4 @@
-import { Section, SectionHeader, EmptyState, SampleTag, Eyebrow } from '@/components/ui/Section';
+import { Section, SectionHeader, EmptyState, SampleTag } from '@/components/ui/Section';
 import { MediaTile } from '@/components/ui/MediaTile';
 import { CmImage } from '@/components/ui/Media';
 import { Button } from '@/components/ui/Button';

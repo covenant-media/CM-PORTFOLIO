@@ -64,6 +64,7 @@ export function SiteHeader({
   return (
     <>
       <header
+        data-surface={surface}
         className={cx(
           'sticky top-0 z-50 w-full transition-[background-color,border-color,backdrop-filter] duration-500',
           scrolled ? 'border-b border-[rgba(243,241,236,.09)] bg-[rgba(10,10,13,.78)] backdrop-blur-xl' : 'border-b border-transparent bg-transparent',

@@ -15,7 +15,8 @@ import Image from 'next/image';
 import { cx, formatDuration } from '@/lib/utils/text';
 import type { VideoRef } from '@/lib/types/content';
 import { Icon } from './Icon';
-import { PosterFallback } from './Media';
+import { plainSrc, PosterFallback } from './Media';
+import { trackClientEvent } from '@/lib/analytics/client';
 import { useReducedMotion } from 'framer-motion';
 
 export interface LightboxItem {
@@ -138,7 +139,7 @@ export function LightboxHost() {
             <VideoPlayer video={item.video} active autoPlay soundOn />
           ) : item.src ? (
             <div className="relative mx-auto aspect-[4/3] max-h-[74vh] w-full">
-              <Image src={item.src} alt={item.alt ?? item.title ?? ''} fill sizes="94vw" className="rounded-3 object-contain" priority />
+              <Image src={item.src} alt={item.alt ?? item.title ?? ''} fill sizes="94vw" className="rounded-3 object-contain" priority unoptimized={plainSrc(item.src)} />
             </div>
           ) : null}
           {item.caption ? <p className="mt-3 text-center text-sm text-fg-muted">{item.caption}</p> : null}
@@ -200,12 +201,16 @@ export function VideoPlayer({
     return (
       <button
         type="button"
-        onClick={onActivate}
+        onClick={() => {
+          // Pressing play is the signal; an embed's internal playback cannot be observed.
+          trackClientEvent('video_play', video.id);
+          onActivate?.();
+        }}
         className={cx('group/player relative isolate block w-full overflow-hidden rounded-3 bg-[var(--color-ink-850)] text-left', aspectClass, className)}
         aria-label={`Play ${video.title}`}
       >
         {video.posterUrl ? (
-          <Image src={video.posterUrl} alt="" fill sizes="(max-width: 768px) 94vw, 70vw" className="object-cover" loading="lazy" decoding="async" />
+          <Image src={video.posterUrl} alt="" fill sizes="(max-width: 768px) 94vw, 70vw" className="object-cover" loading="lazy" decoding="async" unoptimized={plainSrc(video.posterUrl)} />
         ) : (
           <PosterFallback seed={video.id} label={video.title} ratio={aspect} className="size-full" showLabel={false} />
         )}

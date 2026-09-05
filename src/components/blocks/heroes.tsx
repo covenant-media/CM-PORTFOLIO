@@ -3,13 +3,13 @@ import Image from 'next/image';
 import { MaskReveal, DecodeText, Tilt } from '@/components/ui/Motion';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
-import { CmImage, PosterFallback } from '@/components/ui/Media';
+import { CmImage, plainSrc, PosterFallback } from '@/components/ui/Media';
 import { MediaTile } from '@/components/ui/MediaTile';
 import { Eyebrow, SampleTag } from '@/components/ui/Section';
 import { cx, truncate } from '@/lib/utils/text';
 import type { PageData, ProjectCard, SectionData, SiteContext, VideoRef } from '@/lib/types/content';
 import { blockProps } from '@/lib/cms/blocks';
-import { pb, pstrs, ps, pn, safeHref } from './helpers';
+import { pb, pstrs, ps, pn } from './helpers';
 
 type Settings = SiteContext['settings'];
 
@@ -463,7 +463,7 @@ export async function HeroTech({
                 <span aria-hidden className="absolute bottom-4 right-4 size-3 border-b border-r border-[var(--accent)] opacity-70" />
                 {portrait?.url ? (
                   <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3">
-                    <Image src={portrait.url} alt={portrait.alt ?? setting(settings, 'founder.name')} fill priority sizes="(max-width:1024px) 88vw, 34vw" className="object-cover" />
+                    <Image src={portrait.url} alt={portrait.alt ?? setting(settings, 'founder.name')} fill priority sizes="(max-width:1024px) 88vw, 34vw" className="object-cover" unoptimized={plainSrc(portrait.url)} />
                   </div>
                 ) : (
                   <PosterFallback seed="portrait" label="portrait — upload in CMS" ratio="tall" tone="tech" className="w-full" />
@@ -552,7 +552,7 @@ export function PageHeader({
 }
 
 /** Used when a page has no CMS hero: keeps structure, shows an admin hint. */
-export function MissingContent({ page, settings }: { page: PageData; settings: Settings }) {
+export function MissingContent({ page }: { page: PageData; settings?: Settings }) {
   return (
     <div className="container-page py-24">
       <div className="max-w-2xl rounded-4 border border-dashed border-[rgba(243,241,236,.16)] bg-[rgba(243,241,236,.02)] p-8">

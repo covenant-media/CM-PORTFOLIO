@@ -10,7 +10,7 @@ import { Reveal } from '@/components/ui/Reveal';
 import { FadeIn } from '@/components/ui/Motion';
 import { WorkGrid } from './WorkCard';
 import { CmsPage } from './CmsPage';
-import { projectBySlug, relatedProjects, categoryLabel } from '@/lib/cms/content';
+import { projectBySlug, relatedProjects } from '@/lib/cms/content';
 import { jsonLdScript, projectJsonLd, breadcrumbJsonLd } from '@/lib/seo/structured';
 import { resolveSite } from '@/lib/seo/metadata';
 import { cx, formatDate, truncate } from '@/lib/utils/text';

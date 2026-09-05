@@ -85,7 +85,6 @@ export async function createUser(input: { email: string; name: string; password:
 }
 
 export async function createSession(userId: string, meta: { ip?: string; userAgent?: string } = {}): Promise<{ token: string; csrfToken: string; expiresAt: number }> {
-  const db = await getDb();
   const token = randomBytes(32).toString('base64url');
   const expiresAt = Date.now() + SESSION_TTL_MS;
   await insertRow('admin_session', {

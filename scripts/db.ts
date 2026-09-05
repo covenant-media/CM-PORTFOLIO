@@ -7,7 +7,7 @@ process.env.CM_SCRIPT = '1';
 async function main() {
   const cmd = process.argv[2] ?? 'status';
   const { getDriver, driverKind } = await import('../src/lib/db/driver');
-  const { ensureSchema, execute, select } = await import('../src/lib/db/index');
+  const { ensureSchema, select } = await import('../src/lib/db/index');
 
   if (cmd === 'status') {
     await ensureSchema();

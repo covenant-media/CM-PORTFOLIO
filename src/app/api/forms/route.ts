@@ -9,7 +9,7 @@
 import { FORM_CONFIGS, type FormVariant } from '@/lib/cms/forms';
 import { getSetting } from '@/lib/cms/settings';
 import { cleanLine, looksSpammy, normaliseMultiline, verifyFormToken, verifyTurnstile } from '@/lib/security/forms';
-import { clientIp, recordEvent, visitorIdFrom } from '@/lib/analytics/events';
+import { clientIp, recordEvent } from '@/lib/analytics/events';
 import { checkRate, RATE_RULES, hashIp } from '@/lib/auth/rate-limit';
 import { getDb, insertRow } from '@/lib/db';
 import { revalidateContent } from '@/lib/cms/repository';

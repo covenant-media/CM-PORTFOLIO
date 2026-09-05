@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 /**
@@ -9,7 +9,20 @@ import { usePathname, useSearchParams } from 'next/navigation';
  *  2. first-party analytics — page views, CTA clicks, outbound clicks, video plays.
  * No cookie, no fingerprinting, honours DNT and reduced motion.
  */
+/**
+ * Wraps the search-param-aware half in a Suspense boundary: reading `useSearchParams` during a
+ * static prerender is only allowed behind one, and these pages are prerendered. The component
+ * renders nothing, so the fallback is genuinely nothing.
+ */
 export function SiteBehaviours({ division = 'main' }: { division?: string }) {
+  return (
+    <Suspense fallback={null}>
+      <Behaviours division={division} />
+    </Suspense>
+  );
+}
+
+function Behaviours({ division }: { division: string }) {
   const pathname = usePathname();
   const search = useSearchParams();
 
@@ -70,9 +83,13 @@ export function SiteBehaviours({ division = 'main' }: { division?: string }) {
   }, [pathname]);
 
   useEffect(() => {
+    // Event names the ingest endpoint accepts; anything else is dropped here rather than
+    // travelling to the server to be refused.
+    const KNOWN = new Set(['page_view', 'cta_click', 'project_click', 'video_play', 'outbound_click', 'form_submit', 'form_error', 'resume_download', 'lightbox_open', 'nav_click', 'search']);
+
     const track = (name: string, target?: string, meta?: Record<string, unknown>) => {
       void navigator.sendBeacon(
-        '/api/track',
+        '/api/events',
         new Blob([JSON.stringify({ name, path: pathname + (search?.toString() ? `?${search}` : ''), target, division, meta })], { type: 'application/json' }),
       );
     };
@@ -80,7 +97,12 @@ export function SiteBehaviours({ division = 'main' }: { division?: string }) {
     const onClick = (event: MouseEvent) => {
       const el = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-analytics]');
       if (el) {
-        track(el.dataset.analytics || 'interaction', el.dataset.analyticsTarget || el.getAttribute('href') || undefined);
+        // The marker names the event when it is one we record; otherwise it becomes the target
+        // of a generic interaction so the click is still attributable.
+        const marker = el.dataset.analytics || 'cta_click';
+        const name = KNOWN.has(marker) ? marker : 'cta_click';
+        const target = el.dataset.analyticsTarget || (name === marker ? el.getAttribute('href') || undefined : marker);
+        track(name, target);
         return;
       }
       const link = (event.target as HTMLElement | null)?.closest<HTMLAnchorElement>('a[href^="http"]');
@@ -95,16 +117,25 @@ export function SiteBehaviours({ division = 'main' }: { division?: string }) {
       }
     };
 
+    // Components that know more than a CSS marker can — a video that really started, a gallery
+    // that opened — announce themselves on this event instead of importing the endpoint.
+    const onTrack = (event: Event) => {
+      const detail = (event as CustomEvent<{ name?: string; target?: string }>).detail;
+      if (detail?.name && KNOWN.has(detail.name)) track(detail.name, detail.target);
+    };
+
     document.addEventListener('click', onClick, true);
     document.addEventListener('keydown', onKey, true);
+    window.addEventListener('cm:track', onTrack);
     return () => {
       document.removeEventListener('click', onClick, true);
       document.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('cm:track', onTrack);
     };
   }, [division, pathname, search]);
 
   useEffect(() => {
-    void fetch('/api/track', {
+    void fetch('/api/events', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name: 'page_view', path: pathname, division }),

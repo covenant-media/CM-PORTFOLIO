@@ -16,10 +16,12 @@
     "db:reset": "node --import tsx scripts/db.ts reset && node --import tsx scripts/db.ts migrate && node --import tsx scripts/db.ts seed",
     "db:status": "node --import tsx scripts/db.ts status",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "node --import tsx --test tests/*.test.ts",
-    "check": "npm run typecheck && npm run test",
+    "check": "npm run typecheck && npm run lint && npm run test",
     "dev:next": "next dev -p 3000 -H 0.0.0.0",
-    "db:serve": "node --import tsx scripts/pglite-socket.ts"
+    "db:serve": "node --import tsx scripts/pglite-socket.ts",
+    "test:watch": "node --import tsx --test --watch tests/*.test.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.8",
@@ -43,6 +45,9 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@types/sanitize-html": "^2.16.1",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.25",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "simple-icons": "^16.29.0",
     "tailwindcss": "^4.3.0",
     "tsx": "^4.20.0",

@@ -92,7 +92,11 @@ export async function list(moduleKey: string, query: ListQuery = {}): Promise<Li
 
   const per = Math.min(Math.max(Number(query.per ?? 25), 1), 200);
   const page = Math.max(Number(query.page ?? 1), 1);
-  const sortSql = safeSort(spec, query.sort) || module.defaultSort || (module.sortable ? ' ORDER BY sort_order ASC, created_at DESC' : ' ORDER BY created_at DESC');
+  const fallback = sortExpression(spec, module.sortable ? 'sort_order' : undefined);
+  const rawSort = safeSort(spec, query.sort) || module.defaultSort || `ORDER BY ${module.sortable ? `sort_order ASC, ${fallback}` : fallback}`;
+  // Registry-authored sort fragments are trimmed so a missing leading space in the
+  // module definition can never weld ORDER onto the WHERE clause.
+  const sortSql = rawSort.trim() ? ` ${rawSort.trim()}` : '';
 
   const whereSql = `WHERE ${where.join(' AND ')}`;
   const rows = await db.select<Record<string, unknown>>(
@@ -109,6 +113,14 @@ export async function list(moduleKey: string, query: ListQuery = {}): Promise<Li
     per,
     pages: Math.max(1, Math.ceil(total / per)),
   };
+}
+
+/** Not every table is timestamped (site_setting is keyed), so order by what exists. */
+function sortExpression(spec: (typeof TABLES)[TableName], skip?: string): string {
+  for (const column of ['created_at', 'updated_at', 'sort_order']) {
+    if (column !== skip && column in spec.columns) return `${column} DESC`;
+  }
+  return `${spec.pk} ASC`;
 }
 
 function safeSort(spec: (typeof TABLES)[TableName], sort?: string): string {

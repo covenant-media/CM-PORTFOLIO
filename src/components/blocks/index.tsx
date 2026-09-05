@@ -24,7 +24,6 @@ import {
   galleriesFor,
   postsFor,
   pricingFor,
-  projectCards,
   projectCountFor,
   servicesFor,
   siteContext,
