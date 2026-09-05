@@ -1,0 +1,617 @@
+@import 'tailwindcss';
+
+/* =============================================================================
+   COVENANT MEDIA — DESIGN TOKENS
+   One place to restyle the entire ecosystem. Public experiences keep the same
+   primitives and differ only by scoped accent / rhythm tokens (--surface-tone,
+   --accent, motion temperament) applied by the .theme-* wrappers.
+   ============================================================================= */
+
+@theme {
+  /* ── ink & paper (surface ramp) ─────────────────────────────────────────── */
+  --color-ink-1000: #050507;
+  --color-ink-950: #0a0a0d;
+  --color-ink-900: #0e0f13;
+  --color-ink-850: #131419;
+  --color-ink-800: #181a20;
+  --color-ink-750: #1e2028;
+  --color-ink-700: #262932;
+  --color-ink-600: #343844;
+  --color-ink-500: #4a4f5e;
+
+  --color-paper: #f6f4f0;
+  --color-paper-2: #ece8e1;
+  --color-paper-ink: #101115;
+
+  /* ── foreground ─────────────────────────────────────────────────────────── */
+  --color-fg: #f3f1ec;
+  --color-fg-muted: #a9abb4;
+  --color-fg-dim: #74788a;
+
+  /* ── accents: shared brass + scoped per experience (see .theme-*) ───────── */
+  --color-brass-100: #f7e7c4;
+  --color-brass-200: #eed49b;
+  --color-brass-300: #e4be6b;
+  --color-brass-400: #d8a24a;
+  --color-brass-500: #bd8432;
+  --color-brass-600: #93641f;
+  --color-signal-400: #7fa7ff;
+  --color-signal-500: #5b87f5;
+  --color-signal-600: #3f66d4;
+  --color-alert-400: #e8795a;
+  --color-ok-400: #74c9a0;
+
+  /* ── typography ─────────────────────────────────────────────────────────────
+     Self-hosted via @fontsource (see src/app/layout.tsx) — no third-party font
+     requests. Swap a family here and in the import list; nothing else changes. */
+  --font-display-family: 'Fraunces Variable';
+  --font-body-family: 'Inter Variable';
+  --font-mono-family: 'JetBrains Mono';
+
+  --font-display: var(--font-display-family), 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-sans: var(--font-body-family), ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, sans-serif;
+  --font-mono: var(--font-mono-family), ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--line-height: 1.1;
+  --text-eyebrow--letter-spacing: 0.18em;
+  --text-eyebrow--font-weight: 500;
+
+  --text-display-1: clamp(2.75rem, 8.2vw, 7rem);
+  --text-display-1--line-height: 0.94;
+  --text-display-1--letter-spacing: -0.03em;
+  --text-display-2: clamp(2.1rem, 5vw, 4rem);
+  --text-display-2--line-height: 1;
+  --text-display-2--letter-spacing: -0.024em;
+  --text-display-3: clamp(1.6rem, 3.2vw, 2.6rem);
+  --text-display-3--line-height: 1.08;
+  --text-display-3--letter-spacing: -0.02em;
+  --text-display-4: clamp(1.25rem, 2vw, 1.6rem);
+  --text-display-4--line-height: 1.2;
+  --text-display-4--letter-spacing: -0.014em;
+
+  --text-lede: clamp(1.0625rem, 1.5vw, 1.375rem);
+  --text-lede--line-height: 1.5;
+  --text-lede--letter-spacing: -0.011em;
+
+  /* ── radii / borders / shadows ──────────────────────────────────────────── */
+  --radius-1: 3px;
+  --radius-2: 6px;
+  --radius-3: 10px;
+  --radius-4: 14px;
+  --radius-5: 20px;
+  --radius-6: 28px;
+  --radius-pill: 999px;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 10px 30px -18px rgba(0, 0, 0, 0.85);
+  --shadow-3: 0 34px 80px -40px rgba(0, 0, 0, 0.9);
+  --shadow-lift: 0 26px 60px -30px rgba(0, 0, 0, 0.8), 0 2px 0 rgba(255, 255, 255, 0.03) inset;
+
+  /* ── motion ─────────────────────────────────────────────────────────────── */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-spring: linear(0, 0.032 5.4%, 0.135 11.2%, 0.372 19.7%, 0.614 28.2%, 0.825 37.2%, 0.961 47.3%, 1 61.3%);
+
+  --container-page: 84rem;
+  --container-wide: 100rem;
+  --container-read: 44rem;
+}
+
+/* ── experience scopes ───────────────────────────────────────────────────────
+   Every component reads accent/rhythm from these variables — that is what makes
+   Media and Tech feel like siblings rather than clones. */
+.theme-main {
+  --accent: var(--color-brass-400);
+  --accent-soft: var(--color-brass-200);
+  --accent-ink: #1a1204;
+  --accent-glow: rgba(216, 162, 74, 0.22);
+  --surface-tone: radial-gradient(120% 80% at 50% -10%, rgba(216, 162, 74, 0.1), transparent 62%);
+  --motion-tempo: 1;
+}
+.theme-media {
+  --accent: var(--color-brass-300);
+  --accent-soft: var(--color-brass-100);
+  --accent-ink: #1b1204;
+  --accent-glow: rgba(228, 190, 107, 0.26);
+  --surface-tone: radial-gradient(90% 70% at 12% 0%, rgba(228, 190, 107, 0.13), transparent 60%),
+    radial-gradient(70% 60% at 100% 20%, rgba(127, 167, 255, 0.08), transparent 60%);
+  --motion-tempo: 1.15;
+}
+.theme-tech {
+  --accent: var(--color-signal-400);
+  --accent-soft: #c5d6ff;
+  --accent-ink: #04070f;
+  --accent-glow: rgba(127, 167, 255, 0.2);
+  --surface-tone: linear-gradient(to bottom, rgba(127, 167, 255, 0.07), transparent 45%);
+  --motion-tempo: 0.85;
+}
+.theme-admin {
+  --accent: #7fb2c9;
+  --accent-soft: #cfe6f0;
+  --accent-ink: #04080b;
+  --accent-glow: rgba(127, 178, 201, 0.18);
+  --surface-tone: none;
+  --motion-tempo: 0.7;
+}
+
+/* =============================================================================
+   BASE
+   ============================================================================= */
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-line, rgba(243, 241, 236, 0.1));
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: var(--color-ink-700) transparent;
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-ink-950);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv05', 'ss01', 'tnum' 0;
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent, var(--color-brass-300));
+    outline-offset: 3px;
+    border-radius: var(--radius-1);
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--accent, var(--color-brass-300)) 35%, transparent);
+    color: var(--color-fg);
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    letter-spacing: inherit;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-ink-1000);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-ink-700);
+    border-radius: 99px;
+    border: 2px solid var(--color-ink-1000);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-600);
+  }
+}
+
+/* =============================================================================
+   UTILITIES
+   ============================================================================= */
+
+@utility container-page {
+  width: 100%;
+  max-width: var(--container-page);
+  margin-inline: auto;
+  padding-inline: clamp(1.15rem, 4.2vw, 3rem);
+}
+
+@utility container-wide {
+  width: 100%;
+  max-width: var(--container-wide);
+  margin-inline: auto;
+  padding-inline: clamp(1.15rem, 4.2vw, 3rem);
+}
+
+@utility container-read {
+  width: 100%;
+  max-width: var(--container-read);
+  margin-inline: auto;
+}
+
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-eyebrow);
+  line-height: 1.2;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-fg-dim);
+}
+
+@utility display-1 {
+  font-family: var(--font-display);
+  font-size: var(--text-display-1);
+  line-height: var(--text-display-1--line-height);
+  letter-spacing: var(--text-display-1--letter-spacing);
+}
+
+@utility display-2 {
+  font-family: var(--font-display);
+  font-size: var(--text-display-2);
+  line-height: var(--text-display-2--line-height);
+  letter-spacing: var(--text-display-2--letter-spacing);
+}
+
+@utility display-3 {
+  font-family: var(--font-display);
+  font-size: var(--text-display-3);
+  line-height: var(--text-display-3--line-height);
+  letter-spacing: var(--text-display-2--letter-spacing);
+}
+
+@utility display-4 {
+  font-family: var(--font-display);
+  font-size: var(--text-display-4);
+  line-height: var(--text-display-4--line-height);
+  letter-spacing: -0.014em;
+}
+
+@utility lede {
+  font-size: var(--text-lede);
+  line-height: 1.55;
+  color: var(--color-fg-muted);
+  letter-spacing: -0.011em;
+}
+
+/* Hairline system: one border language across all three experiences. */
+@utility hairline {
+  border: 1px solid rgba(243, 241, 236, 0.09);
+}
+@utility hairline-t {
+  border-top: 1px solid rgba(243, 241, 236, 0.09);
+}
+@utility hairline-b {
+  border-bottom: 1px solid rgba(243, 241, 236, 0.09);
+}
+@utility hairline-r {
+  border-right: 1px solid rgba(243, 241, 236, 0.09);
+}
+
+@utility surface {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 40%),
+    var(--color-ink-900);
+  border: 1px solid rgba(243, 241, 236, 0.08);
+}
+
+@utility accent-text {
+  color: var(--accent);
+}
+@utility accent-bg {
+  background-color: var(--accent);
+}
+
+/* Film-grain / grain overlay used sparingly on cinematic panels. */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+/* Technical grid, used on the Tech experience. */
+.tech-grid {
+  background-image:
+    linear-gradient(to right, rgba(127, 167, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(127, 167, 255, 0.07) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(80% 60% at 50% 0%, #000 20%, transparent 75%);
+}
+
+.halo {
+  background: radial-gradient(60% 60% at 50% 50%, var(--accent-glow, rgba(216, 162, 74, 0.2)), transparent 70%);
+  filter: blur(28px);
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scroll-reveal fallback (JS adds data-visible; CSS also reveals on print/JS-off). */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, var(--reveal-y, 18px), 0);
+  transition:
+    opacity 0.7s var(--ease-out-soft),
+    transform 0.7s var(--ease-out-soft);
+  transition-delay: calc(var(--reveal-delay, 0) * 1ms);
+}
+.reveal[data-visible='true'],
+.no-js .reveal {
+  opacity: 1;
+  transform: none;
+}
+
+.mask-link {
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.45s var(--ease-out-expo);
+}
+.mask-link:hover,
+.mask-link:focus-visible {
+  background-size: 100% 1px;
+}
+
+@keyframes cm-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes cm-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes cm-float {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(var(--tilt, 0deg));
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) rotate(calc(var(--tilt, 0deg) * 0.4));
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--tilt, 0deg));
+  }
+}
+
+@keyframes cm-drift {
+  from {
+    transform: translate3d(var(--drift-from, -6%), 0, 0);
+  }
+  to {
+    transform: translate3d(var(--drift-to, 6%), 0, 0);
+  }
+}
+
+@keyframes cm-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes cm-shimmer {
+  from {
+    background-position: -160% 0;
+  }
+  to {
+    background-position: 260% 0;
+  }
+}
+
+@keyframes cm-pulse-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-float {
+  animation: cm-float calc(var(--motion-tempo, 1) * 9s) ease-in-out infinite;
+  animation-delay: calc(var(--float-delay, 0) * 1ms);
+  will-change: transform;
+}
+.animate-marquee {
+  animation: cm-marquee calc(var(--marquee-duration, 38s)) linear infinite;
+}
+.animate-pulse-dot {
+  animation: cm-pulse-dot 2.4s ease-in-out infinite;
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-ink-850) 0%, var(--color-ink-800) 45%, var(--color-ink-850) 90%);
+  background-size: 220% 100%;
+  animation: cm-shimmer 1.5s linear infinite;
+}
+
+/* Prose for CMS-authored markdown (blog + service copy). */
+.prose-cm {
+  color: var(--color-fg-muted);
+  line-height: 1.72;
+  font-size: 1.0625rem;
+}
+.prose-cm > * + * {
+  margin-top: 1.15em;
+}
+.prose-cm h2,
+.prose-cm h3,
+.prose-cm h4 {
+  color: var(--color-fg);
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  margin-top: 2em;
+  line-height: 1.15;
+}
+.prose-cm h2 {
+  font-size: 1.6rem;
+}
+.prose-cm h3 {
+  font-size: 1.28rem;
+}
+.prose-cm a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.prose-cm strong {
+  color: var(--color-fg);
+  font-weight: 600;
+}
+.prose-cm ul,
+.prose-cm ol {
+  padding-left: 1.15rem;
+}
+.prose-cm ul {
+  list-style: none;
+}
+.prose-cm ul > li {
+  position: relative;
+  padding-left: 0.9rem;
+}
+.prose-cm ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.68em;
+  width: 5px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--accent);
+  opacity: 0.75;
+}
+.prose-cm ol {
+  list-style: decimal;
+}
+.prose-cm li + li {
+  margin-top: 0.5em;
+}
+.prose-cm blockquote {
+  border-left: 2px solid var(--accent);
+  padding: 0.2rem 0 0.2rem 1.15rem;
+  color: var(--color-fg);
+  font-family: var(--font-display);
+  font-size: 1.18rem;
+  line-height: 1.5;
+}
+.prose-cm code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--color-ink-850);
+  border: 1px solid rgba(243, 241, 236, 0.08);
+  border-radius: var(--radius-1);
+  padding: 0.12em 0.4em;
+}
+.prose-cm pre {
+  background: var(--color-ink-1000);
+  border: 1px solid rgba(243, 241, 236, 0.08);
+  border-radius: var(--radius-3);
+  padding: 1.1rem 1.2rem;
+  overflow-x: auto;
+}
+.prose-cm pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+.prose-cm hr {
+  border: 0;
+  border-top: 1px solid rgba(243, 241, 236, 0.1);
+  margin: 2.4rem 0;
+}
+.prose-cm img {
+  border-radius: var(--radius-3);
+  border: 1px solid rgba(243, 241, 236, 0.08);
+}
+.prose-cm table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.prose-cm th,
+.prose-cm td {
+  border-bottom: 1px solid rgba(243, 241, 236, 0.08);
+  padding: 0.55rem 0.6rem;
+  text-align: left;
+}
+.prose-cm th {
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Light "paper" panels for editorial contrast on the brand site. */
+.on-paper {
+  --color-fg: var(--color-paper-ink);
+  --color-fg-muted: #4c4f57;
+  --color-fg-dim: #6b6f79;
+  background-color: var(--color-paper);
+  color: var(--color-paper-ink);
+}
+.on-paper :focus-visible {
+  outline-color: var(--color-brass-600);
+}
+
+/* ── accessibility: honour reduced motion globally ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .animate-float,
+  .animate-marquee {
+    animation: none !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
