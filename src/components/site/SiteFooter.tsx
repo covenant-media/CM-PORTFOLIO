@@ -84,7 +84,7 @@ export function SiteFooter({ surface, wordmark, nav, socials, contact, cta, lega
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:gap-10">
+          <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4 md:gap-10">
             {columns.map((column) => (
               <nav key={column.label} aria-label={column.label}>
                 <p className="eyebrow">{column.label}</p>
@@ -124,6 +124,29 @@ export function SiteFooter({ surface, wordmark, nav, socials, contact, cta, lega
                 {contact.location ? <li className="text-fg-muted">{contact.location}</li> : null}
                 {contact.responseTime ? <li className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-fg-dim">{contact.responseTime}</li> : null}
               </ul>
+            </div>
+            <div>
+              <p className="eyebrow">Newsletter</p>
+              <p className="mt-4 text-[0.875rem] text-fg-muted">Subscribe for insights and updates.</p>
+              <form
+                action="#"
+                method="post"
+                className="mt-3 flex overflow-hidden rounded-pill border border-[rgba(243,241,236,.14)] bg-[rgba(243,241,236,.03)] p-1 transition focus-within:border-[var(--accent)]/45"
+              >
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Your email"
+                  aria-label="Email for newsletter"
+                  className="min-w-0 flex-1 bg-transparent px-3 py-1.5 text-[0.8rem] text-fg placeholder:text-fg-dim focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="shrink-0 rounded-pill bg-[var(--accent)] px-3 py-1.5 text-[0.72rem] font-medium uppercase tracking-[0.1em] text-[var(--accent-ink)] transition hover:brightness-105"
+                >
+                  Subscribe
+                </button>
+              </form>
             </div>
           </div>
         </div>

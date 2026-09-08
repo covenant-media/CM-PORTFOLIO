@@ -107,6 +107,7 @@
   --accent-soft: var(--color-brass-200);
   --accent-ink: #1a1204;
   --accent-glow: rgba(216, 162, 74, 0.22);
+  --accent-rgb: 216, 162, 74;
   --surface-tone: radial-gradient(120% 80% at 50% -10%, rgba(216, 162, 74, 0.1), transparent 62%);
   --motion-tempo: 1;
 }
@@ -115,6 +116,7 @@
   --accent-soft: var(--color-brass-100);
   --accent-ink: #1b1204;
   --accent-glow: rgba(228, 190, 107, 0.26);
+  --accent-rgb: 228, 190, 107;
   --surface-tone: radial-gradient(90% 70% at 12% 0%, rgba(228, 190, 107, 0.13), transparent 60%),
     radial-gradient(70% 60% at 100% 20%, rgba(127, 167, 255, 0.08), transparent 60%);
   --motion-tempo: 1.15;
@@ -123,7 +125,8 @@
   --accent: var(--color-signal-400);
   --accent-soft: #c5d6ff;
   --accent-ink: #04070f;
-  --accent-glow: rgba(127, 167, 255, 0.2);
+  --accent-glow: rgba(127, 167, 255, 0.24);
+  --accent-rgb: 127, 167, 255;
   --surface-tone: linear-gradient(to bottom, rgba(127, 167, 255, 0.07), transparent 45%);
   --motion-tempo: 0.85;
 }
@@ -132,6 +135,7 @@
   --accent-soft: #cfe6f0;
   --accent-ink: #04080b;
   --accent-glow: rgba(127, 178, 201, 0.18);
+  --accent-rgb: 127, 178, 201;
   --surface-tone: none;
   --motion-tempo: 0.7;
 }
@@ -152,6 +156,8 @@
     text-rendering: optimizeLegibility;
     scrollbar-color: var(--color-ink-700) transparent;
     color-scheme: dark;
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
   }
 
   body {

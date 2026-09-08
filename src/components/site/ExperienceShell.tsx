@@ -37,7 +37,7 @@ const SURFACE_DEFAULTS: Record<
     wordmark: { primary: 'Covenant Nsikan', secondary: 'Technology' },
     navLocation: { header: 'tech_header', footer: 'tech_footer' },
     socialPlacement: 'tech',
-    cta: { label: 'Available for work', href: '/tech/contact' },
+    cta: { label: 'Hire Me', href: '/tech#contact' },
   },
 };
 
@@ -69,9 +69,7 @@ export async function ExperienceShell({ surface, children }: { surface: Surface;
   const ctaLabel =
     surface === 'media'
       ? String(settings['media.cta_secondary'] ?? config.cta.label)
-      : surface === 'tech'
-        ? 'Start a project'
-        : config.cta.label;
+      : config.cta.label;
 
   const tagline =
     surface === 'media'
@@ -154,8 +152,8 @@ export async function ExperienceShell({ surface, children }: { surface: Surface;
         legal={{
           privacyHref: '/security',
           termsHref: '/security#working-terms',
-          brandLine: String(settings['brand.legal_name'] ?? '').trim() || `${brandName}`,
-          tagline: truncate(tagline, 60) || null,
+          brandLine: surface === 'tech' ? `${String(settings['founder.name'] ?? brandName)}. All rights reserved.` : (String(settings['brand.legal_name'] ?? '').trim() || `${brandName}`),
+          tagline: surface === 'tech' ? 'Designed & Built with precision.' : (truncate(tagline, 60) || null),
         }}
       />
       <SiteBehaviours division={surface} />

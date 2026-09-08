@@ -72,8 +72,11 @@ export const TECH_CATEGORIES = [
 export const SKILL_CATEGORIES = [
   { value: 'frontend', label: 'Frontend' },
   { value: 'backend', label: 'Backend' },
+  { value: 'databases', label: 'Databases' },
+  { value: 'design', label: 'UI / UX' },
+  { value: 'grc', label: 'GRC & Security' },
+  { value: 'graphics', label: 'Graphic Design' },
   { value: 'mobile', label: 'Mobile' },
-  { value: 'design', label: 'UI / UX & design' },
   { value: 'infrastructure', label: 'Infrastructure & DevOps' },
   { value: 'security', label: 'Cybersecurity' },
   { value: 'data', label: 'Data & AI' },
