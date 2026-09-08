@@ -9,6 +9,7 @@ const UI: Record<string, string[]> = {
   'arrow-right': ['M4 12h15', 'M13 6l6 6-6 6'],
   'arrow-up-right': ['M7 17 17 7', 'M8 7h9v9'],
   'arrow-down': ['M12 4v15', 'M6 13l6 6 6-6'],
+  'arrow-up': ['M12 20V5', 'M6 11l6-6 6 6'],
   'arrow-left': ['M20 12H5', 'M11 18l-6-6 6-6'],
   'chevron-right': ['M9 5l7 7-7 7'],
   'chevron-down': ['M5 9l7 7 7-7'],
@@ -83,7 +84,7 @@ const UI: Record<string, string[]> = {
   copy: ['M9 9h11v11H9z', 'M15 9V4H4v11h5'],
   archive: ['M3.5 5h17v4h-17z', 'M5 9v10h14V9', 'M10 13h4'],
   inbox: ['M3.5 5h17v14h-17z', 'M3.5 14h4l1.5 2.5h6L16.5 14h4'],
-  starFilled: [],
+  starFilled: ['M12 3.5l2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.7l5.9-.8L12 3.5Z'],
   eyeView: ['M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z', 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z'],
   wand: ['M4 20 15 9', 'M17 3l.8 2.2L20 6l-2.2.8L17 9l-.8-2.2L14 6l2.2-.8L17 3Z', 'M6.5 5l.5 1.5L8.5 7 7 7.5 6.5 9 6 7.5 4.5 7 6 6.5 6.5 5Z'],
 };

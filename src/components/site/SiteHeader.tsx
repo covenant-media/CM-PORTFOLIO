@@ -44,6 +44,23 @@ export function SiteHeader({
     setOpen(false);
   }, [pathname]);
 
+  // Close drawer when an in-page anchor link is clicked on the same page
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      const anchor = target?.closest('a');
+      if (!anchor) return;
+      const href = anchor.getAttribute('href') ?? '';
+      if (href.startsWith('#') || (pathname && href.startsWith(`${pathname}#`))) {
+        // Defer close slightly so the browser has time to start the scroll
+        window.setTimeout(() => setOpen(false), 50);
+      }
+    };
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
+  }, [open, pathname]);
+
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;

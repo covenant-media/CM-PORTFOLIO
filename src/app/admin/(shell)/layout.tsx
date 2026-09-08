@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Shell } from '@/components/admin/Shell';
 import { AdminProviders } from '@/components/admin/providers';
@@ -8,13 +7,6 @@ import { adminNav } from '@/lib/cms/admin';
 import { submissionCounts } from '@/lib/cms/repository';
 
 export const dynamic = 'force-dynamic';
-
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: { default: 'Covenant CMS', template: '%s — Covenant CMS' },
-    robots: { index: false, follow: false },
-  };
-}
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await readSession();

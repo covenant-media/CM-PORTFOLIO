@@ -1,6 +1,13 @@
 import Link from 'next/link';
 import { CovenantMark } from '@/components/site/Logo';
 
+/**
+ * Public-site 404. Admin 404s are handled by a separate page under the admin
+ * route group (`src/app/admin/(shell)/not-found.tsx`) so signed-in editors
+ * never get dumped onto the public "lost the reel" screen. A tiny middleware
+ * (`src/middleware.ts`) also bounces malformed /admin/* URLs back to /admin
+ * as a belt-and-braces safety net.
+ */
 export default function NotFound() {
   return (
     <main className="theme-main flex min-h-dvh items-center justify-center px-6">
