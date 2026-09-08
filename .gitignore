@@ -30,3 +30,4 @@ __pycache__/
 
 # local dev logs
 .cm-dev.log
+uploads/
