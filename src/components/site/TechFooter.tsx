@@ -30,19 +30,19 @@ export function TechFooter({ name, role, nav, socials, contact, ctaLabel, ctaHre
       /development|ui|grc|cloud|cyber|security|design|api|database|support|network|consulting|deploy/i.test(n.label),
   );
   const servicesFallback = [
-    { label: 'Full Stack Development', href: '/tech#services' },
-    { label: 'Frontend Development', href: '/tech#services' },
-    { label: 'Backend Development', href: '/tech#services' },
-    { label: 'Website Design', href: '/tech#services' },
-    { label: 'UI/UX Design', href: '/tech#services' },
-    { label: 'REST API Development', href: '/tech#services' },
-    { label: 'Database Design', href: '/tech#services' },
-    { label: 'Cloud Deployment', href: '/tech#services' },
-    { label: 'Cybersecurity', href: '/tech#services' },
-    { label: 'GRC Analysis', href: '/tech#services' },
-    { label: 'IT Support', href: '/tech#services' },
-    { label: 'Networking', href: '/tech#services' },
-    { label: 'Digital Consulting', href: '/tech#services' },
+    { label: 'Full Stack Development', href: '/tech-portfolio#services' },
+    { label: 'Frontend Development', href: '/tech-portfolio#services' },
+    { label: 'Backend Development', href: '/tech-portfolio#services' },
+    { label: 'Website Design', href: '/tech-portfolio#services' },
+    { label: 'UI/UX Design', href: '/tech-portfolio#services' },
+    { label: 'REST API Development', href: '/tech-portfolio#services' },
+    { label: 'Database Design', href: '/tech-portfolio#services' },
+    { label: 'Cloud Deployment', href: '/tech-portfolio#services' },
+    { label: 'Cybersecurity', href: '/tech-portfolio#services' },
+    { label: 'GRC Analysis', href: '/tech-portfolio#services' },
+    { label: 'IT Support', href: '/tech-portfolio#services' },
+    { label: 'Networking', href: '/tech-portfolio#services' },
+    { label: 'Digital Consulting', href: '/tech-portfolio#services' },
   ];
   const servicesList = services.length >= 6 ? services : servicesFallback;
   const year = new Date().getFullYear();

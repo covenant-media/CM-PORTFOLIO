@@ -8,7 +8,7 @@ The three public surfaces are:
 
 1. **Covenant (main brand house)** — root routes (`/`, `/about`, `/services`, `/work`, `/team`, `/contact`, `/blog`, `/security`). Neutral, editorial design; brass accent. Represents the studio at large.
 2. **Covenant Media** — `/media/**`. Cinematic, dark, video-first portfolio for film production and photography work.
-3. **Covenant Tech (Covenant Nsikan)** — `/tech/**`. Technical, lighter-accented (blue signal) portfolio for software engineering, design, and cybersecurity work.
+3. **Covenant Tech (Covenant Nsikan)** — `/tech-portfolio` (canonical single-page route; the legacy `/tech` route and `/tech/**` deep links still serve the same experience and its section pages). Technical, lighter-accented (blue signal) portfolio for software engineering, design, and cybersecurity work.
 
 The surfaces share data, components, and primitives but differ by theme tokens, navigation, and wordmark. There is never a second copy of content.
 

@@ -94,7 +94,7 @@ export const BLOCK_TYPES: BlockTypeDef[] = [
       text('mediaHref', 'Media link', { default: '/media' }),
       text('techTitle', 'Tech panel title', { default: 'Technology', maxLength: 40 }),
       text('techBlurb', 'Tech blurb', { maxLength: 240, rows: 3 }),
-      text('techHref', 'Tech link', { default: '/tech' }),
+      text('techHref', 'Tech link', { default: '/tech-portfolio' }),
       bool('showCounts', 'Show project counts', { default: true }),
     ],
   },

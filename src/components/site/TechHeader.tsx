@@ -105,7 +105,7 @@ export function TechHeader({ name, anchors }: { name: string; anchors: TechAncho
                 {first} <span className="text-[var(--accent)]">{rest}</span>
               </span>
               <span className="mt-[3px] font-mono text-[0.5rem] uppercase tracking-[0.26em] text-fg-dim">
-                Portfolio
+                Tech Portfolio
               </span>
             </span>
           </a>

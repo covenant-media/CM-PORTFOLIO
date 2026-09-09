@@ -62,7 +62,7 @@ export async function HeroBrand({
               <Button href="/media" size="lg" iconEnd="arrow-right" data-analytics="cta_click" data-analytics-target="/media">
                 Explore Media
               </Button>
-              <Button href="/tech" size="lg" variant="outline" iconEnd="arrow-right" data-analytics="cta_click" data-analytics-target="/tech">
+              <Button href="/tech-portfolio" size="lg" variant="outline" iconEnd="arrow-right" data-analytics="cta_click" data-analytics-target="/tech-portfolio">
                 Explore Technology
               </Button>
             </div>
@@ -103,7 +103,7 @@ export async function HeroBrand({
               title={setting(settings, 'tech.role', 'Software · UI/UX · IT · Cybersecurity')}
               kicker="Tech portfolio"
               body={truncate(setting(settings, 'tech.intro'), 150)}
-              href="/tech"
+              href="/tech-portfolio"
               ctaLabel="View projects"
               tone="tech"
               icon="code"
@@ -511,7 +511,7 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   const title = titleProp ?? block?.headline ?? undefined;
-  const crumb = surface === 'main' ? null : { label: surface === 'media' ? 'Media portfolio' : 'Tech portfolio', href: surface === 'media' ? '/media' : '/tech' };
+  const crumb = surface === 'main' ? null : { label: surface === 'media' ? 'Media portfolio' : 'Tech portfolio', href: surface === 'media' ? '/media' : '/tech-portfolio' };
   return (
     <section className={cx('relative isolate overflow-hidden border-b border-[rgba(243,241,236,.09)]', 'pb-12 pt-24 md:pb-16 md:pt-28')} data-hero>
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10" style={{ backgroundImage: 'var(--surface-tone)' }} />

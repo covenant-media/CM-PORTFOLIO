@@ -110,6 +110,7 @@ Apply judgement: tiny tweaks (typo fixes, minor styling, small bug fixes) don't 
 - **Uploads** are served from `/uploads/[...path]`, not directly from the `public/` directory's static handler.
 - **Dual drivers**: SQL must run on both PGlite (dev) and real Postgres (prod); do not rely on extensions or features PGlite 0.5.8 doesn't support.
 - **Server-external packages**: `pg` and `@electric-sql/pglite` are marked `serverExternalPackages` in Next config. Do not import them into client components.
+- **`main` history may contain orphan commits.** Content uploaded through the GitHub web UI (e.g. `Add files via upload`) has previously landed on `main` as unrelated-history root commits, so `git merge origin/main` fails with "refusing to merge unrelated histories". To pull such assets into a work branch use `git checkout origin/main -- <path>` (verify the tree diff first: `git diff --stat HEAD origin/main`); do not rewrite or force-push `main` to "fix" it.
 
 ## 9. Handing off
 

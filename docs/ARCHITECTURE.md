@@ -54,6 +54,7 @@ Covenant Media is a **monolithic Next.js 15 App Router application** that runs b
   - Root routes (`/`, `/about`, `/services`, `/work`, `/team`, `/contact`, `/blog`, `/security`): `surface="main"`
   - `/media/**`: `surface="media"`
   - `/tech/**`: `surface="tech"`
+  - `/tech-portfolio`: canonical single-page Tech Portfolio — renders `TechPortfolioPage` directly (not via `CmsPage`); `/tech` intentionally serves the same component so legacy links and bookmarks keep working.
 - The CMS lives under `/admin/**` with its own `theme-admin` shell and auth layout.
 - Each public route imports `CmsPage`, which resolves content in this order:
   1. Look up `page` row by slug.
@@ -208,11 +209,11 @@ All admin write operations go through **server actions** in `src/app/admin/actio
 | `blocks/trust.tsx` | TestimonialWall, PricingTable, Certifications, ResumeBlock. |
 | `blocks/contact.tsx` | Renders the public form block with the correct variant (main/media/tech). |
 | `site/CatalogView.tsx` | Filterable/paginated project list used by work catalogs. |
-| `site/TechPortfolioPage.tsx` | Single-page `/tech` experience (hero → about → skills → services → projects → experience → testimonials → contact → resume) with curated production content, sticky `TechAnchorNav`, typewriter role line, filled-accent contact tiles, and a résumé download that falls back to a bundled placeholder PDF. Replaces the multi-route tech surface for the primary `/tech` landing while keeping the legacy `/tech/<section>` deep links alive. |
-| `site/TechAnchorNav.tsx` | Right-rail anchor dots for the single-page tech portfolio, highlighting the section in view via IntersectionObserver and smooth-scrolling on click. |
+| `site/TechPortfolioPage.tsx` | Single-page tech experience (hero → about → skills → services → projects → experience → testimonials → contact → resume) with curated production content, sticky `TechHeader` anchor nav, the `RoleSweep` role line, filled-accent contact tiles, and a résumé download falling back to `/uploads/Covenant-Nsikan-Resume.pdf`. Served at the canonical `/tech-portfolio` route; `/tech` keeps serving it for legacy links, and `/tech/<section>` deep links remain alive. |
+| `site/TechAnchorNav.tsx` | Right-rail anchor dots for the single-page tech portfolio (IntersectionObserver + smooth scroll). Currently unreferenced — `TechHeader` implements the in-view highlight for the live page; kept until a design decision removes it. |
 | `site/TechFooter.tsx` | Tech-specific footer with three columns (Brand · Services · Stay-in-Touch). |
 | `ui/BackToTop.tsx` | Bottom-right floating back-to-top FAB (solid accent circle with up-arrow) that appears after 600 px of scroll. |
-| `ui/Typewriter.tsx` | Accessible typewriter role line that respects `prefers-reduced-motion`; defaults tuned to 35ms type / 20ms delete / 2000ms hold for a smooth, readable cycle. |
+| `ui/RoleSweep.tsx` | Role-line animation for the tech hero: stacked phrases in one grid cell (zero layout jump) with a clip-path window that reveals left→right, holds ~2s, then retracts right→left into the next line — one chained CSS transition, no reflow, no cursor. Reduced motion falls back to the full phrase list joined by a middot. Replaced the former `ui/Typewriter.tsx`. |
 | `site/ProjectDetailView.tsx` | Project detail page (gallery, metrics, credits, links, related). |
 | `site/ArticleView.tsx` | Blog post rendering (sanitized markdown). |
 | `forms/PublicForm.tsx` | Client component that posts to `/api/forms`, handles validation errors, success state, Turnstile when configured. |

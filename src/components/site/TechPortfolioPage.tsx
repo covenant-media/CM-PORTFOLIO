@@ -14,7 +14,7 @@ import { FadeIn, Tilt, CountUp, SpotlightCard, Parallax } from '@/components/ui/
 import { TechHeader, type TechAnchor } from './TechHeader';
 import { BackToTop } from '@/components/ui/BackToTop';
 import { TechFooter } from './TechFooter';
-import { Typewriter } from '@/components/ui/Typewriter';
+import { RoleSweep } from '@/components/ui/RoleSweep';
 import { ScrollProgress } from './SiteFooter';
 import { SiteBehaviours } from '@/components/ui/SiteBehaviours';
 import { LightboxHost } from '@/components/ui/Lightbox';
@@ -70,9 +70,12 @@ const EMAIL = 'covenantmedia0015@gmail.com';
 const WHATSAPP = 'https://wa.me/2349064095620';
 const AVAILABILITY = 'Available: 24/7';
 
-// User-uploaded portraits, served at their real upload paths.
-const PORTRAIT_1 = '/uploads/file_000000008b8481f4aee85dfd3e5ec9d2.png'; // hero image placeholder
-const PORTRAIT_2 = '/uploads/file_00000000ec0081f4b68ef8925f5690a2.png'; // about image placeholder
+// Portraits uploaded to the repo at public/images (served statically).
+// First_Image is 4:5 (matches the hero frame's ratio); the hero's framing layer
+// below zooms it ~1.2× so both shoulders reach the edges and the bottom lands
+// just under the folded arms. 2nd_Image is 7:10 (the about frame matches it).
+const PORTRAIT_1 = '/images/First_Image.png'; // hero portrait (navy-suit studio shot)
+const PORTRAIT_2 = '/images/2nd_Image.png'; // about portrait (illustrated headshot)
 
 const HERO_STATS = [
   { label: 'Years of Experience', value: 8, suffix: '+' },
@@ -186,14 +189,21 @@ export default async function TechPortfolioPage() {
               <div className="min-w-0 lg:col-span-5 lg:col-start-8 lg:order-2">
                 <FadeIn delay={200} y={16}>
                   <Tilt max={4}>
-                    <SpotlightCard className="mx-auto max-w-[260px] rounded-4 sm:max-w-[300px] lg:max-w-none">
+                    <SpotlightCard className="mx-auto max-w-[240px] rounded-4 sm:max-w-[272px] lg:max-w-[400px]">
                       <figure className="relative isolate overflow-hidden rounded-4 border border-[rgba(243,241,236,.12)] bg-[color:var(--color-ink-900)] p-2.5 shadow-[var(--shadow-3)]">
                         <span aria-hidden className="absolute left-3 top-3 z-10 size-3 border-l-2 border-t-2 border-[var(--accent)]" />
                         <span aria-hidden className="absolute right-3 top-3 z-10 size-3 border-r-2 border-t-2 border-[var(--accent)]" />
                         <span aria-hidden className="absolute bottom-3 left-3 z-10 size-3 border-b-2 border-l-2 border-[var(--accent)]" />
                         <span aria-hidden className="absolute bottom-3 right-3 z-10 size-3 border-b-2 border-r-2 border-[var(--accent)]" />
                         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3">
-                          <Image src={PORTRAIT_1} alt={`${name} — professional portrait`} fill priority sizes="(max-width:1024px) 75vw, 30vw" unoptimized className="object-cover object-top transition duration-700 hover:scale-[1.02]" />
+                          {/* Portrait-style framing: 1.2× zoom anchored slightly left of the
+                              image centre so both shoulders land ~5% inside the edges, while the
+                              crop bottom sits just under the folded forearms (top stays fixed,
+                              so the head keeps its natural headroom). Pure CSS crop — the image
+                              itself is untouched, and it scales with the frame at every size. */}
+                          <div className="absolute inset-0 origin-[49%_0%] scale-[1.2]">
+                            <Image src={PORTRAIT_1} alt={`${name} — professional portrait`} fill priority sizes="(max-width:1024px) 68vw, 27vw" unoptimized className="object-cover object-top transition duration-700 hover:scale-[1.02]" />
+                          </div>
                           <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-[color:var(--color-ink-1000)]/55 via-transparent to-transparent" />
                         </div>
                       </figure>
@@ -219,7 +229,7 @@ export default async function TechPortfolioPage() {
                 <FadeIn delay={400} y={8}>
                   <div className="mt-3 flex items-baseline justify-center gap-2 font-mono text-[0.85rem] font-normal leading-snug tracking-[0.02em] text-[var(--accent)] md:text-[0.95rem] lg:justify-start">
                     <span className="sr-only">{ROLE_LINE}</span>
-                    <Typewriter phrases={TYPER_PHRASES} typeSpeed={30} deleteSpeed={45} hold={2600} gap={180} />
+                    <RoleSweep phrases={TYPER_PHRASES} />
                   </div>
                 </FadeIn>
 
@@ -289,16 +299,19 @@ export default async function TechPortfolioPage() {
             {/* Section header centered, spanning both columns */}
             <div className="mx-auto max-w-2xl text-center">
               <Eyebrow center>About Me</Eyebrow>
-              <h2 className="display-2 mt-3">Crafting Digital Excellence</h2>
+              {/* One horizontal line whenever the viewport allows it (md = 768px clears the
+                  display-2 clamp at every size); smaller screens keep natural wrapping. */}
+              <h2 className="display-2 mt-3 whitespace-normal md:whitespace-nowrap">Crafting Digital Excellence</h2>
               <p className="lede mt-4">{ABOUT_INTRO}</p>
             </div>
 
             {/* Two equal columns: portrait left, prose+capabilities right */}
             <div className="mt-12 grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
               <FadeIn className="flex justify-center lg:justify-start">
-                <div className="relative w-full max-w-sm overflow-hidden rounded-4 border border-[rgba(243,241,236,.1)] bg-[color:var(--color-ink-900)] p-2">
-                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3">
-                    <Image src={PORTRAIT_2} alt={name} fill sizes="(max-width:1024px) 80vw, 40vw" unoptimized className="object-cover object-top" />
+                <div className="relative w-full max-w-[336px] overflow-hidden rounded-4 border border-[rgba(243,241,236,.1)] bg-[color:var(--color-ink-900)] p-2">
+                  {/* 7/10 = the portrait's native ratio, so nothing is cropped at any width */}
+                  <div className="relative aspect-[7/10] w-full overflow-hidden rounded-3">
+                    <Image src={PORTRAIT_2} alt={name} fill sizes="(max-width:1024px) 74vw, 24vw" unoptimized className="object-cover object-top" />
                     <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-[color:var(--color-ink-1000)]/60 via-transparent to-transparent" />
                   </div>
                 </div>

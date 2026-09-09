@@ -51,8 +51,8 @@ export default async function DashboardPage() {
           <Link href="/media" target="_blank" className="inline-flex items-center gap-1.5 rounded-2 border border-line px-3 py-1.5 text-[12.5px] text-fg-muted transition-colors hover:border-[var(--accent)]/50 hover:text-fg">
             <Icon name="film" size={13} /> /media
           </Link>
-          <Link href="/tech" target="_blank" className="inline-flex items-center gap-1.5 rounded-2 border border-line px-3 py-1.5 text-[12.5px] text-fg-muted transition-colors hover:border-[var(--accent)]/50 hover:text-fg">
-            <Icon name="code" size={13} /> /tech
+          <Link href="/tech-portfolio" target="_blank" className="inline-flex items-center gap-1.5 rounded-2 border border-line px-3 py-1.5 text-[12.5px] text-fg-muted transition-colors hover:border-[var(--accent)]/50 hover:text-fg">
+            <Icon name="code" size={13} /> /tech-portfolio
           </Link>
         </div>
       </header>

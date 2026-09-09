@@ -37,7 +37,7 @@ export async function TwoWorlds({ block }: { block: { props: Props; headline: st
               tone: 'tech',
               title: ps(props, 'techTitle', 'Technology'),
               blurb: ps(props, 'techBlurb'),
-              href: safeHref(ps(props, 'techHref', '/tech'), '/tech'),
+              href: safeHref(ps(props, 'techHref', '/tech-portfolio'), '/tech-portfolio'),
               icon: 'code',
               sample: tech.cards[0],
               count: tech.total,

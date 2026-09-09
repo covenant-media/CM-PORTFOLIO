@@ -132,7 +132,7 @@ function ArticleBody({
           <nav aria-label="Breadcrumb" className="mb-7">
             <ol className="flex items-center gap-2 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-fg-dim">
               <li>
-                <Link href={project.division === 'tech' ? '/tech' : '/media'} className="transition hover:text-fg">
+                <Link href={project.division === 'tech' ? '/tech-portfolio' : '/media'} className="transition hover:text-fg">
                   {project.division === 'tech' ? 'Tech portfolio' : 'Media portfolio'}
                 </Link>
               </li>
