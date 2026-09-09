@@ -15,7 +15,7 @@ export function Section({
   id?: string;
   children: React.ReactNode;
   className?: string;
-  size?: 'default' | 'tight' | 'loose' | 'flush';
+  size?: 'default' | 'tight' | 'compact' | 'loose' | 'flush';
   tone?: 'transparent' | 'raised' | 'sunken' | 'paper' | 'accent';
   as?: 'section' | 'div' | 'footer' | 'header';
   bleed?: boolean;
@@ -23,6 +23,7 @@ export function Section({
   const padding = {
     default: 'py-16 md:py-24 lg:py-28',
     tight: 'py-10 md:py-14',
+    compact: 'py-12 md:py-16',
     loose: 'py-20 md:py-32 lg:py-40',
     flush: 'py-0',
   }[size];

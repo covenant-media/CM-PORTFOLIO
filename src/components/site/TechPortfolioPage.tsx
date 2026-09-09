@@ -10,13 +10,12 @@ import Image from 'next/image';
 import { Icon } from '@/components/ui/Icon';
 import { Section, SectionHeader, Eyebrow } from '@/components/ui/Section';
 import { Button } from '@/components/ui/Button';
-import { FadeIn, MaskReveal, Tilt, CountUp, SpotlightCard, Parallax } from '@/components/ui/Motion';
-import { TechAnchorNav } from './TechAnchorNav';
+import { FadeIn, Tilt, CountUp, SpotlightCard, Parallax } from '@/components/ui/Motion';
+import { TechHeader, type TechAnchor } from './TechHeader';
 import { BackToTop } from '@/components/ui/BackToTop';
 import { TechFooter } from './TechFooter';
 import { Typewriter } from '@/components/ui/Typewriter';
 import { ScrollProgress } from './SiteFooter';
-import { SiteHeader } from './SiteHeader';
 import { SiteBehaviours } from '@/components/ui/SiteBehaviours';
 import { LightboxHost } from '@/components/ui/Lightbox';
 import {
@@ -37,7 +36,7 @@ export async function generateMetadata() {
   };
 }
 
-const ANCHORS = [
+const ANCHORS: TechAnchor[] = [
   { id: 'home', label: 'Home' },
   { id: 'about', label: 'About' },
   { id: 'skills', label: 'Skills' },
@@ -63,7 +62,7 @@ const TYPER_PHRASES = [
   'Cybersecurity Analyst',
 ];
 const INTRO =
-  'A versatile Full Stack Developer, GRC Analyst, and Digital Technology Consultant with years of experience crafting exceptional digital experiences — from production web platforms to governance, risk & compliance programs that keep organisations honest.';
+  'A versatile Full Stack Developer, GRC Analyst, and Digital Technology Consultant with years of experience crafting exceptional digital experiences, from production web platforms to governance, risk & compliance programs that keep organisations honest.';
 const LOCATION = 'Lagos / Akwa Ibom, Nigeria';
 const PHONE = '09064095620';
 const PHONE_TEL = '+2349064095620';
@@ -71,9 +70,9 @@ const EMAIL = 'covenantmedia0015@gmail.com';
 const WHATSAPP = 'https://wa.me/2349064095620';
 const AVAILABILITY = 'Available: 24/7';
 
-// User-uploaded portraits, served at fixed paths.
-const PORTRAIT_1 = '/uploads/portraits/portrait-1.png'; // hero (collared shirt — file_...8b84)
-const PORTRAIT_2 = '/uploads/portraits/portrait-2.png'; // about (white t-shirt — file_...ec00)
+// User-uploaded portraits, served at their real upload paths.
+const PORTRAIT_1 = '/uploads/file_000000008b8481f4aee85dfd3e5ec9d2.png'; // hero image placeholder
+const PORTRAIT_2 = '/uploads/file_00000000ec0081f4b68ef8925f5690a2.png'; // about image placeholder
 
 const HERO_STATS = [
   { label: 'Years of Experience', value: 8, suffix: '+' },
@@ -84,7 +83,7 @@ const HERO_STATS = [
 
 const ABOUT_INTRO = 'A passionate technologist and strategic builder dedicated to delivering impactful digital solutions with clean craft and honest scope.';
 const ABOUT_PARAGRAPH_1 =
-  'With a strong foundation in software engineering, UI/UX, cybersecurity, and governance, risk & compliance, I bring a rare blend of technical depth and operational discipline to every project — building platforms that ship, scale, and stay compliant.';
+  'With a strong foundation in web development, UI/UX, cybersecurity, and governance, risk & compliance, I bring a rare blend of technical depth and operational discipline to every project, building platforms that ship, scale, and stay compliant.';
 const ABOUT_PARAGRAPH_2 =
   'Every year I challenge myself to get sharper: cleaner code, tighter risk posture, better-designed interfaces, and clearer communication with the people paying for the work. Growth is a continuous journey, and I remain committed to becoming a better version of myself with each passing day.';
 
@@ -146,10 +145,10 @@ export default async function TechPortfolioPage() {
   const projects = projectResult.cards;
   const cmsName = String(ctx.settings['founder.name'] ?? '').trim();
   const name = cmsName && cmsName !== 'Abraham James' ? cmsName : NAME;
+  const nameParts = name.trim().split(' ');
+  const firstName = nameParts[0] || 'Covenant';
+  const lastName = nameParts.slice(1).join(' ');
   const socials = defaultSocials();
-  const wordmark = { primary: name, secondary: 'Technology' };
-
-  // Single Download Resume button: CMS PDF if published, otherwise bundled placeholder.
   const resumePdfUrl = resume?.url || '/uploads/Covenant-Nsikan-Resume.pdf';
 
   return (
@@ -159,11 +158,9 @@ export default async function TechPortfolioPage() {
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10" style={{ backgroundImage: 'linear-gradient(to bottom, rgba(127,167,255,0.07), transparent 45%)' }} />
       <div aria-hidden className="grain pointer-events-none fixed inset-0 -z-10 opacity-[0.5]" />
 
-      <SiteHeader surface="tech" homeHref="/tech" wordmark={wordmark} nav={ctx.nav['tech_header'] ?? []} cta={{ label: 'Hire Me', href: '/tech#contact' }} socials={socials} />
+      <TechHeader name={name} anchors={ANCHORS} />
 
       <main id="main" className="flex-1">
-        <TechAnchorNav anchors={ANCHORS} />
-
         {/* ── HERO ───────────────────────────────────────────────────
             Desktop (reference): LEFT text column stacked Hello,I'm → name
             (big) → role (smaller) → intro → CTAs → socials. RIGHT portrait.
@@ -173,7 +170,7 @@ export default async function TechPortfolioPage() {
             role → intro → Hire Me / View Projects / Download Resume (all
             visible above the fold) → social icons. No location pill.
         ─────────────────────────────────────────────────────────── */}
-        <section id="home" data-hero className="relative isolate overflow-hidden pt-16 pb-12 md:pt-24 md:pb-16 lg:pt-28 lg:pb-20">
+        <section id="home" data-hero className="relative isolate overflow-hidden pb-10 pt-12 md:pb-14 md:pt-16 lg:pb-16 lg:pt-20">
           <div aria-hidden className="tech-grid pointer-events-none absolute inset-x-0 -top-24 -z-10 h-[120vh] opacity-70" />
           <div aria-hidden className="pointer-events-none absolute -right-24 top-8 -z-10 h-80 w-80 rounded-full bg-[var(--accent)]/15 blur-[100px]" />
           <div aria-hidden className="pointer-events-none absolute -left-24 bottom-0 -z-10 h-80 w-80 rounded-full bg-[var(--accent)]/5 blur-[100px]" />
@@ -196,7 +193,7 @@ export default async function TechPortfolioPage() {
                         <span aria-hidden className="absolute bottom-3 left-3 z-10 size-3 border-b-2 border-l-2 border-[var(--accent)]" />
                         <span aria-hidden className="absolute bottom-3 right-3 z-10 size-3 border-b-2 border-r-2 border-[var(--accent)]" />
                         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3">
-                          <Image src={PORTRAIT_1} alt={`${name} — professional portrait`} fill priority sizes="(max-width:1024px) 75vw, 30vw" className="object-cover object-top transition duration-700 hover:scale-[1.02]" />
+                          <Image src={PORTRAIT_1} alt={`${name} — professional portrait`} fill priority sizes="(max-width:1024px) 75vw, 30vw" unoptimized className="object-cover object-top transition duration-700 hover:scale-[1.02]" />
                           <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-[color:var(--color-ink-1000)]/55 via-transparent to-transparent" />
                         </div>
                       </figure>
@@ -213,17 +210,16 @@ export default async function TechPortfolioPage() {
                   </p>
                 </FadeIn>
 
-                <MaskReveal
-                  as="h1"
-                  lines={[name]}
-                  className="mt-3 font-display text-[clamp(2.75rem,9vw,5.8rem)] font-medium leading-[0.95] tracking-[-0.04em] lg:mt-4"
-                  delay={180}
-                />
+                <FadeIn delay={180} y={10}>
+                  <h1 className="mt-3 font-display font-semibold leading-[1.02] tracking-[-0.025em] text-[clamp(2rem,5.6vw,3.4rem)] lg:mt-4">
+                    {firstName} {lastName ? <span className="text-[var(--accent)]">{lastName}</span> : null}
+                  </h1>
+                </FadeIn>
 
                 <FadeIn delay={400} y={8}>
                   <div className="mt-3 flex items-baseline justify-center gap-2 font-mono text-[0.85rem] font-normal leading-snug tracking-[0.02em] text-[var(--accent)] md:text-[0.95rem] lg:justify-start">
                     <span className="sr-only">{ROLE_LINE}</span>
-                    <Typewriter phrases={TYPER_PHRASES} />
+                    <Typewriter phrases={TYPER_PHRASES} typeSpeed={30} deleteSpeed={45} hold={2600} gap={180} />
                   </div>
                 </FadeIn>
 
@@ -288,7 +284,7 @@ export default async function TechPortfolioPage() {
             two equal columns below: portrait LEFT, text+capabilities RIGHT.
             NO stat cards — per request. Matches dkndkmmkmd.PNG reference
             with the 4-stat strip removed. ─────────────────────────── */}
-        <Section id="about" tone="raised">
+        <Section id="about" tone="raised" size="compact">
           <div className="container-page">
             {/* Section header centered, spanning both columns */}
             <div className="mx-auto max-w-2xl text-center">
@@ -302,7 +298,7 @@ export default async function TechPortfolioPage() {
               <FadeIn className="flex justify-center lg:justify-start">
                 <div className="relative w-full max-w-sm overflow-hidden rounded-4 border border-[rgba(243,241,236,.1)] bg-[color:var(--color-ink-900)] p-2">
                   <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3">
-                    <Image src={PORTRAIT_2} alt={name} fill sizes="(max-width:1024px) 80vw, 40vw" className="object-cover object-top" />
+                    <Image src={PORTRAIT_2} alt={name} fill sizes="(max-width:1024px) 80vw, 40vw" unoptimized className="object-cover object-top" />
                     <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-[color:var(--color-ink-1000)]/60 via-transparent to-transparent" />
                   </div>
                 </div>
@@ -334,7 +330,7 @@ export default async function TechPortfolioPage() {
         </Section>
 
         {/* ── SKILLS ───────────────────────────────────────────────── */}
-        <Section id="skills">
+        <Section id="skills" size="compact">
           <div className="container-page">
             <SectionHeader eyebrow="My Skills" title="Technologies &amp; Expertise" lede="A comprehensive toolkit refined through years of hands-on experience across engineering, design, security, and governance." />
             <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
@@ -362,7 +358,7 @@ export default async function TechPortfolioPage() {
         </Section>
 
         {/* ── SERVICES ──────────────────────────────────────────── */}
-        <Section id="services" tone="accent">
+        <Section id="services" tone="accent" size="compact">
           <div className="container-page">
             <SectionHeader eyebrow="Services" title="What I Offer" lede="End-to-end digital and governance services tailored to elevate your brand, harden your systems and keep you compliant." />
             <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -387,7 +383,7 @@ export default async function TechPortfolioPage() {
         </Section>
 
         {/* ── PROJECTS ────────────────────────────────────────── */}
-        <Section id="projects">
+        <Section id="projects" size="compact">
           <div className="container-page">
             <SectionHeader eyebrow="Portfolio" title="Featured Projects" lede="Explore my work across web applications, governance programs, and digital products." />
             <div className="mt-12 grid gap-6 md:grid-cols-2">
@@ -410,7 +406,7 @@ export default async function TechPortfolioPage() {
         </Section>
 
         {/* ── EXPERIENCE ─────────────────────────────────────── */}
-        <Section id="experience" tone="raised">
+        <Section id="experience" tone="raised" size="compact">
           <div className="container-page">
             <SectionHeader eyebrow="Experience" title="Professional Journey" lede="A timeline of growth, shipping, and the lessons that stick." />
             <Parallax distance={14}>
@@ -439,7 +435,7 @@ export default async function TechPortfolioPage() {
         </Section>
 
         {/* ── TESTIMONIALS ────────────────────────────────── */}
-        <Section id="testimonials">
+        <Section id="testimonials" size="compact">
           <div className="container-page">
             <SectionHeader eyebrow="Testimonials" title="What Clients Say" lede="Feedback from clients and collaborators I have had the pleasure of working with." />
             <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -474,48 +470,55 @@ export default async function TechPortfolioPage() {
         {/* ── CONTACT (matches getintouch.PNG reference): left = heading +
             filled-accent-circle contact tiles, right = form card top-aligned.
             Tiles show label + value just like Covenant's data. ─────── */}
-        <Section id="contact" tone="accent">
-          <div className="container-page grid gap-10 lg:grid-cols-12 lg:gap-14 lg:items-start">
-            <div className="lg:col-span-5">
-              <Eyebrow>Get in Touch</Eyebrow>
+        <Section id="contact" tone="accent" size="compact">
+          <div className="container-page">
+            {/* Centered heading stays on top */}
+            <div className="mx-auto max-w-2xl text-center">
+              <Eyebrow center>Get in Touch</Eyebrow>
               <h2 className="display-2 mt-3">Let&apos;s Work Together</h2>
-              <p className="lede mt-3 max-w-md">Have a project in mind? I&apos;d love to hear about it.</p>
-              <ul className="mt-8 space-y-3.5">
-                <ContactInfoTile icon="pin" label="Location" value={LOCATION} />
-                <ContactInfoTile icon="phone" label="Phone / WhatsApp" value={PHONE} href={`tel:${PHONE_TEL}`} />
-                <ContactInfoTile icon="mail" label="Email" value={EMAIL} href={`mailto:${EMAIL}`} />
-                <ContactInfoTile icon="whatsapp" label="WhatsApp" value="Chat on WhatsApp" href={WHATSAPP} external />
-                <ContactInfoTile icon="clock" label="Availability" value={AVAILABILITY} />
-              </ul>
+              <p className="lede mt-4 max-w-xl mx-auto">Have a project in mind? I&apos;d love to hear about it.</p>
             </div>
 
-            <FadeIn className="lg:col-span-7">
-              <form action="/api/forms" method="post" className="space-y-4 rounded-4 border border-[rgba(243,241,236,.1)] bg-[color:var(--color-ink-900)]/80 p-7 shadow-[var(--shadow-2)] backdrop-blur" data-analytics="form_submit" data-form="tech">
-                <input type="hidden" name="form" value="tech" />
-                <Field label="Your Full Name" name="name" placeholder="John Doe" required />
-                <Field label="Your Email Address" name="email" type="email" placeholder="you@email.com" required />
-                <Field label="Subject" name="subject" placeholder="Project inquiry" />
-                <label className="block">
-                  <span className="mb-1.5 block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-fg-dim">Your Message</span>
-                  <textarea name="message" required rows={6} placeholder="Tell me about your project, timeline and budget..." className="w-full resize-none rounded-2 border border-[rgba(243,241,236,.12)] bg-[color:var(--color-ink-950)]/70 px-4 py-3 text-[0.9375rem] text-fg outline-none transition placeholder:text-fg-dim focus:border-[var(--accent)]/60 focus:bg-[color:var(--color-ink-950)]" />
-                </label>
-                <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                  <label className="flex items-start gap-2 text-[11.5px] text-fg-dim">
-                    <input type="checkbox" name="consent" required defaultChecked className="mt-0.5 accent-[var(--accent)]" />
-                    I&apos;m okay with my message being stored to receive a reply.
+            {/* Info tiles + form, side by side below the heading */}
+            <div className="mt-12 grid gap-10 lg:grid-cols-12 lg:gap-14 lg:items-start">
+              <div className="lg:col-span-5">
+                <ul className="space-y-3.5">
+                  <ContactInfoTile icon="pin" label="Location" value={LOCATION} />
+                  <ContactInfoTile icon="phone" label="Phone / WhatsApp" value={PHONE} href={`tel:${PHONE_TEL}`} />
+                  <ContactInfoTile icon="mail" label="Email" value={EMAIL} href={`mailto:${EMAIL}`} />
+                  <ContactInfoTile icon="whatsapp" label="WhatsApp" value="Chat on WhatsApp" href={WHATSAPP} external />
+                  <ContactInfoTile icon="clock" label="Availability" value={AVAILABILITY} />
+                </ul>
+              </div>
+
+              <FadeIn className="lg:col-span-7">
+                <form action="/api/forms" method="post" className="space-y-4 rounded-4 border border-[rgba(243,241,236,.1)] bg-[color:var(--color-ink-900)]/80 p-7 shadow-[var(--shadow-2)] backdrop-blur" data-analytics="form_submit" data-form="tech">
+                  <input type="hidden" name="form" value="tech" />
+                  <Field label="Your Full Name" name="name" placeholder="John Doe" required />
+                  <Field label="Your Email Address" name="email" type="email" placeholder="you@email.com" required />
+                  <Field label="Subject" name="subject" placeholder="Project inquiry" />
+                  <label className="block">
+                    <span className="mb-1.5 block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-fg-dim">Your Message</span>
+                    <textarea name="message" required rows={5} placeholder="Tell me about your project, timeline and budget..." className="w-full resize-none rounded-2 border border-[rgba(243,241,236,.12)] bg-[color:var(--color-ink-950)]/70 px-4 py-3 text-[0.9375rem] text-fg outline-none transition placeholder:text-fg-dim focus:border-[var(--accent)]/60 focus:bg-[color:var(--color-ink-950)]" />
                   </label>
-                  <button type="submit" className="group inline-flex items-center gap-2 rounded-pill bg-[var(--accent)] px-6 py-3 text-[0.9375rem] font-medium text-[var(--accent-ink)] transition hover:brightness-[1.08] hover:-translate-y-px">
-                    Send Message <Icon name="send" size={14} className="transition group-hover:translate-x-0.5" />
-                  </button>
-                </div>
-              </form>
-            </FadeIn>
+                  <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+                    <label className="flex items-start gap-2 text-[11.5px] text-fg-dim">
+                      <input type="checkbox" name="consent" required defaultChecked className="mt-0.5 accent-[var(--accent)]" />
+                      I&apos;m okay with my message being stored to receive a reply.
+                    </label>
+                    <button type="submit" className="group inline-flex items-center gap-2 rounded-pill bg-[var(--accent)] px-6 py-3 text-[0.9375rem] font-medium text-[var(--accent-ink)] transition hover:brightness-[1.08] hover:-translate-y-px">
+                      Send Message <Icon name="send" size={14} className="transition group-hover:translate-x-0.5" />
+                    </button>
+                  </div>
+                </form>
+              </FadeIn>
+            </div>
           </div>
         </Section>
 
         {/* ── RESUME (centered, single Download Resume outline button,
             rewritten copy). Download Resume matches View Projects style. ─ */}
-        <Section id="resume">
+        <Section id="resume" size="compact">
           <div className="container-page">
             <FadeIn>
               <div className="relative mx-auto max-w-3xl overflow-hidden rounded-4 border border-[rgba(243,241,236,.1)] bg-gradient-to-br from-[color:var(--color-ink-900)] via-[color:var(--color-ink-900)] to-[var(--accent)]/10 p-8 text-center md:p-12">
