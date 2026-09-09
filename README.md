@@ -6,7 +6,7 @@ One codebase, three public experiences and one CMS behind them:
 | --- | --- | --- |
 | Covenant (brand house) | `/` and the root routes | neutral, editorial |
 | Covenant Media (film + photography) | `/media/**` | cinematic, dark, video-first |
-| Covenant Tech (systems + consulting) | `/tech/**` | technical, light, mono accents |
+| Covenant Tech (systems + consulting) | `/tech-portfolio` (legacy `/tech/**` still serves it) | technical, light, mono accents |
 | CMS | `/admin/**` | single shared back office |
 
 All three read the same Postgres schema and the same content models. Only the theme tokens and

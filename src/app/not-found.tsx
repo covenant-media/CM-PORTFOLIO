@@ -25,7 +25,7 @@ export default function NotFound() {
           <Link href="/media" className="rounded-pill border border-[rgba(243,241,236,.18)] px-5 py-2.5 transition hover:border-[var(--accent)]">
             Media portfolio
           </Link>
-          <Link href="/tech" className="rounded-pill border border-[rgba(243,241,236,.18)] px-5 py-2.5 transition hover:border-[var(--accent)]">
+          <Link href="/tech-portfolio" className="rounded-pill border border-[rgba(243,241,236,.18)] px-5 py-2.5 transition hover:border-[var(--accent)]">
             Tech portfolio
           </Link>
         </nav>

@@ -33,11 +33,11 @@ const SURFACE_DEFAULTS: Record<
     cta: { label: 'Hire me', href: '/media/contact' },
   },
   tech: {
-    homeHref: '/tech',
+    homeHref: '/tech-portfolio',
     wordmark: { primary: 'Covenant Nsikan', secondary: 'Technology' },
     navLocation: { header: 'tech_header', footer: 'tech_footer' },
     socialPlacement: 'tech',
-    cta: { label: 'Hire Me', href: '/tech#contact' },
+    cta: { label: 'Hire Me', href: '/tech-portfolio#contact' },
   },
 };
 

@@ -937,7 +937,7 @@ export async function sitemapEntries(): Promise<{ path: string; lastmod?: string
   } catch {
     /* table not migrated yet → static routes only */
   }
-  for (const path of ['/about', '/services', '/work', '/team', '/blog', '/security', '/contact', '/media', '/media/work', '/media/services', '/media/about', '/media/pricing', '/media/contact', '/tech', '/tech/about', '/tech/skills', '/tech/services', '/tech/projects', '/tech/experience', '/tech/testimonials', '/tech/resume', '/tech/contact']) push(path);
+  for (const path of ['/about', '/services', '/work', '/team', '/blog', '/security', '/contact', '/media', '/media/work', '/media/services', '/media/about', '/media/pricing', '/media/contact', '/tech-portfolio', '/tech/about', '/tech/skills', '/tech/services', '/tech/projects', '/tech/experience', '/tech/testimonials', '/tech/resume', '/tech/contact']) push(path);
   return out.filter((e) => e.path.length > 1 || e.path === '/').map((e) => ({ ...e, path: e.path.replace(/\/$/, '') || '/' }));
 }
 

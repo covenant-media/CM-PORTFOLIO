@@ -84,7 +84,7 @@ export async function seedDatabase({ force = false }: { force?: boolean } = {}):
       { location: 'main_footer', label: '— Media portfolio', href: '/media' },
       { location: 'main_footer', label: 'Work', href: '/media/work' },
       { location: 'main_footer', label: 'Pricing', href: '/media/pricing' },
-      { location: 'main_footer', label: '— Tech portfolio', href: '/tech' },
+      { location: 'main_footer', label: '— Tech portfolio', href: '/tech-portfolio' },
       { location: 'main_footer', label: 'Projects', href: '/tech/projects' },
       { location: 'main_footer', label: 'Résumé', href: '/tech/resume' },
       { location: 'media_header', label: 'Work', href: '/media/work' },
