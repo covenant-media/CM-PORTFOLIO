@@ -52,8 +52,8 @@ The surfaces share data, components, and primitives but differ by theme tokens, 
 
 ## Major Implemented Features
 
-- **Data model** — 27 SQL tables covering identity, roles, sessions, audit log, pages, reusable content blocks, navigation, social links, services, projects, media assets, videos, galleries, testimonials, team, blog posts, skills, experience, certifications, resume versions, pricing packages, contact submissions, SEO records, and first-party events.
-- **Generic CMS engine** — A module registry (`src/lib/cms/modules.ts`) drives list/search/filter/sort/pagination, create/edit forms, publishing, duplication, reorder, delete-with-reference-check, and permission checks for **24 admin modules** without writing per-module screens.
+- **Data model** — 28 SQL tables covering identity, roles, sessions, audit log, pages, reusable content blocks, navigation, social links, services, projects, media assets, videos, galleries, testimonials, team, blog posts, skills, experience, certifications, resume versions, pricing packages, contact submissions, newsletter subscribers, SEO records, and first-party events.
+- **Generic CMS engine** — A module registry (`src/lib/cms/modules.ts`) drives list/search/filter/sort/pagination, create/edit forms, publishing, duplication, reorder, delete-with-reference-check, and permission checks for **25 admin modules** without writing per-module screens.
 - **Block-based page composition** — A block registry (`src/components/blocks/index.tsx`) renders ~25 section types (hero variants, grids, video walls, testimonial walls, timelines, pricing tables, skill matrix, resume, contact CTA, rich text, etc.). Pages either use CMS-composed blocks or fall back to a structural plan in `src/lib/cms/page-plans.ts`.
 - **Media library** — Upload with MIME sniffing, size limits, Sharp-generated variants, blur placeholders, checksum, in-place asset replacement that propagates everywhere the asset is used.
 - **Video importer** — Paste a URL; source detection, oEmbed fetch (best-effort), poster/embed URL derivation; graceful fallback when platforms block metadata.

@@ -1,6 +1,6 @@
 # Development Status
 
-_Last updated: 2026-09-09 (tech portfolio polish delivered: role-line sweep, portrait framing, `/tech-portfolio` route, navbar branding — final review, build and PR delivery complete)._
+_Last updated: 2026-09-10 (tech portfolio social links, newsletter, resume file, and contact form completed)._
 
 This document describes the current development state of the Covenant Media platform. It distinguishes what is implemented and working, what is in progress or partial, known issues, and remaining work visible from the repository.
 
@@ -12,13 +12,13 @@ All items below appear fully implemented in code (routes, data layer, UI, and te
 - Next.js 15 App Router + React 19 + TypeScript strict setup with Tailwind v4.
 - Dual database driver (`pg` production, PGlite embedded dev) with a single `DbDriver` interface and auto-migrating idempotent schema.
 - Design token system (`.theme-main|media|tech|admin`) with shared primitives; self-hosted fonts; reduced-motion support; skip links; focus rings; noscript notice.
-- Full 27-table PostgreSQL schema with indexes and prefixed string IDs.
+- Full 28-table PostgreSQL schema with indexes and prefixed string IDs.
 - Dev orchestration: `scripts/dev.ts` boots PGlite socket → waits for ready → starts Next; CLI scripts for migrate/seed/reset/status/reset-admin.
 
 ### CMS (`/admin`)
 - Session-cookie auth with CSRF, scrypt passwords, role-based permissions (owner/editor/media_editor/viewer), login rate limiting, account lockout, account password change, sign-out of other sessions.
 - Generic admin dispatcher: list/search/filter/sort/pagination, create, edit, publish/draft/archive, duplicate (where enabled), delete with reference check, reorder (drag-and-drop), "feature" toggles, "verify social link" action, "activate resume" action.
-- All 24 CMS modules implemented via the registry:
+- All 25 CMS modules implemented via the registry:
   - Structure: Pages, Homepage sections (blocks), Navigation
   - Brand: Site settings, Social links, Services
   - Media: Media projects, Videos, Photos, Galleries, Media library
@@ -26,7 +26,7 @@ All items below appear fully implemented in code (routes, data layer, UI, and te
   - Trust: Team, Testimonials
   - Commerce: Pricing, Contact information (settings group)
   - Insight: Blog
-  - System: SEO, Submissions, Featured content, Account
+  - System: SEO, Newsletter subscribers, Submissions, Featured content, Account
 - Field type system covering: text, textarea, markdown, number, money, boolean, select, multiselect, url, slug, date, datetime, image, asset, video, relation (single+multi), tags, list, repeat (sub-forms), json, seo, color. Conditional `showIf`, groups, help text, max length, required.
 - Block composer to attach/reorder/toggle/override blocks on pages.
 - Navigation editor (drag-to-reorder across six locations).
@@ -61,7 +61,8 @@ All items below appear fully implemented in code (routes, data layer, UI, and te
 - **Maintenance mode** site setting short-circuits public pages while leaving `/admin` reachable.
 
 ### Forms, security, SEO, analytics
-- Three contact form variants (main/media/tech) with field configs shared between UI and server.
+- Three contact form variants (main/media/tech) with field configs shared between UI and server. Tech variant explicitly collects the `subject` of the inquiry.
+- `newsletter_subscriber` backend for email capture directly from footer sections via AJAX.
 - Honeypot, signed timing token (HMAC), per-IP rate limit, optional Cloudflare Turnstile, spam pattern detection; bots receive the same 200 response; IPs stored only as salted daily-rotated hashes; consent flag.
 - Optional Resend email notification for submissions; `notified_at` tracking.
 - SEO: dynamic metadata per page, canonical URLs, Open Graph image route (`/api/og`), XML sitemap, robots.txt, RSS feed, JSON-LD for Organization + Website, per-entity SEO records.
@@ -93,7 +94,6 @@ All items below appear fully implemented in code (routes, data layer, UI, and te
 These are areas that exist in code but appear partially built or stubbed. They are **not confirmed broken**; they simply warrant investigation when touched.
 
 - **Blog scheduling**: `scheduled_at` exists and the editor exposes it; there is no visible cron/scheduler in the Next process that flips `scheduled` → `published` automatically. Posts with `status='scheduled'` will not publish until the status is changed manually or a scheduler is added.
-- **Resume download**: the Download Resume button falls back to `/uploads/Covenant-Nsikan-Resume.pdf` while no active CMS résumé version is published; uploading a real PDF in CMS → Resume manager and marking it Active + Published swaps the href to the CMS URL automatically (no "request a copy" fallback). Hero, Résumé-section and other CTAs all point to the same PDF download when no CMS version is active. **Correction (2026-09-09):** the PDF is NOT tracked in Git (`public/uploads/*` is ignored) — earlier notes here and in the CHANGELOG said it was bundled; a fresh clone 404s that fallback until the file is placed in the uploads directory or served from the CMS.
 - **S3 storage driver**: A compact SigV4 S3-compatible driver (PUT/DELETE) is implemented in `src/lib/media/storage.ts` for R2/B2/MinIO/WASabi; however, it has not been exercised as part of this documentation inspection and uploads/list/replace flows against a real S3-compatible bucket should be validated before production use (especially signed URL generation, variants, and cache invalidation).
 - **GitHub enrichment**: `GITHUB_TOKEN` is referenced in env but usage for Tech project repo metadata is not extensive in the public read layer (repo_url/live_url render as links, but extra metadata fetch may not be wired).
 - **YouTube Data API key**: env var exists; the video importer falls back to oEmbed. Metadata quality is best-effort and should be reviewed by an editor before publishing even when the key is set.
@@ -115,8 +115,6 @@ Classified by confidence.
 - **`/admin/(shell)/layout.tsx` and `(auth)/layout.tsx` group routes** are in place; any new admin route must respect the grouping (auth routes don't require a session, shell routes do).
 - **Sample seed data is deliberately present**; running `npm run db:seed` on a production database will add placeholder rows if tables are empty. Use only on first setup.
 - **The public `/api/forms` GET method returns 405** (by design, to prevent enumeration). Do not add a GET handler that lists submissions.
-- **The `/tech-portfolio` (and `/tech`) single-page contact form cannot submit** — confirmed 2026-09-09. The custom native `<form>` inside `TechPortfolioPage.tsx` posts to `/api/forms` without the required `_token` timing token and without the tech variant's required fields (`project_type`, `requirements`), so every submission fails validation (422 / redirect `?error=1`) and no lead is stored. The shared `contact_block` + `PublicForm` wiring is correct — the single-page form just isn't using it. Out of scope for the 2026-09-09 polish task; fix by rendering the shared `PublicForm` (with a server-issued token) or by adding hidden token/config fields to the custom form.
-- **Resume fallback PDF is untracked** — `/uploads/Covenant-Nsikan-Resume.pdf` is referenced by `TechPortfolioPage.tsx` but `public/uploads/*` is gitignored and the file was never force-added (verified 404 on a fresh checkout). Either commit the file (force-add), ship it under a non-ignored path, or hide the button until a CMS version is active.
 - **`src/components/site/TechAnchorNav.tsx` is dead code** — not imported anywhere since `TechHeader` took over anchor highlighting (verified 2026-09-09). Remove or wire up on next tech-surface task.
 - **Image optimization in Next is enabled** (AVIF/WebP formats). Remote hosts whitelist is a narrow allowlist; adding new remote media hosts requires updating `next.config.mjs` `remotePatterns`.
 

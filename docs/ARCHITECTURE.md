@@ -42,7 +42,7 @@ Covenant Media is a **monolithic Next.js 15 App Router application** that runs b
                             │
               ┌─────────────▼──────────────┐
               │   PostgreSQL 14+           │
-              │   27 tables                │
+              │   28 tables                │
               └────────────────────────────┘
 ```
 
@@ -98,7 +98,7 @@ There is no separate backend process. All backend logic runs inside Next:
   - `driver.ts` — `DbDriver` interface; implements `postgres` (node-postgres) and `pglite` (embedded WASM Postgres) backends.
   - `index.ts` — generic `select`, `selectOne`, `execute`, `transaction`, `insertRow`, `updateRow`, `deleteRow`, `getById`, `quote`, `orderBy`. Coerces JS values to the correct Postgres types, auto-manages timestamps. Auto-applies `schema.sql` on first use.
   - `tables.ts` — `TABLES` registry mapping table name to columns, types, nullability, writability, pk, id prefix, timestamps flag. **The CMS can only write columns declared here.**
-  - `schema.sql` — Idempotent DDL (CREATE … IF NOT EXISTS) for all 27 tables + indexes.
+  - `schema.sql` — Idempotent DDL (CREATE … IF NOT EXISTS) for all 28 tables + indexes.
   - `seed.ts` — Seeds demo sample rows; skips tables that already have rows.
 - `src/lib/cms/`
   - `modules.ts` — `CMS_MODULES` array: one entry per admin module with table, editor, fields, list columns, filters, search, sortability, publishability, slugs, fixed scopes, permission key, public base path.
@@ -134,7 +134,7 @@ There is no separate backend process. All backend logic runs inside Next:
 
 ## Database Architecture
 
-- **27 tables**, all in one Postgres database. All primary keys are prefixed text IDs (e.g. `prj_a1b2c3…`), generated via `newId(prefix)` (random UUID hex-truncated + prefix).
+- **28 tables**, all in one Postgres database. All primary keys are prefixed text IDs (e.g. `prj_a1b2c3…`), generated via `newId(prefix)` (random UUID hex-truncated + prefix).
 - **Idempotent migrations**: `schema.sql` is applied via `CREATE … IF NOT EXISTS` on every boot; the dev CLI also exposes `npm run db:migrate` for explicit runs. There is no migration framework — schema changes are edits to `schema.sql` plus matching edits to `tables.ts`.
 - **Key tables and relationships**:
   - `admin_user` ↔ `admin_session` (cascade delete), `admin_user` ↔ `audit_log` (set null on delete)
@@ -142,6 +142,8 @@ There is no separate backend process. All backend logic runs inside Next:
   - `page` ↔ `content_block` via `page_block` (many-to-many with placement/variant/sort_order/overrides).
   - `project` is shared by media and tech via `division`; projects reference `media_asset` (cover), `media_video` (hero).
   - `media_video` references `media_asset` for file uploads and posters; references `project`; platform videos use `source`, `source_id`, `embed_url`, `poster_url`.
+  - `contact_submission` collects leads.
+  - `newsletter_subscriber` tracks subscriptions via footer/newsletter forms.
   - `media_asset` is the media library; referenced by projects, videos, galleries, testimonials, team, blog posts, resume versions, SEO records.
   - `gallery` holds ordered items in `items JSONB` referencing asset IDs.
   - `service`, `skill`, `testimonial`, `pricing_package`, `experience_item`, `certification`, `team_member`, `social_link`, `navigation_item` are all division-scoped and sortable.
@@ -270,7 +272,7 @@ All admin write operations go through **server actions** in `src/app/admin/actio
 ## Important Architectural Decisions Reflected in the Code
 
 1. **One codebase, three sites, one DB.** No multi-repo or multi-deploy split; surfaces are separated by theme + navigation + division scoping only.
-2. **Generic CMS driven by a registry.** Adding a module is a data change (add to schema, tables, modules) — no new list/form screens needed. This avoids 24 hand-written admin pages.
+2. **Generic CMS driven by a registry.** Adding a module is a data change (add to schema, tables, modules) — no new list/form screens needed. This avoids 25 hand-written admin pages.
 3. **Structural plans with no prose.** Fallback pages declare only which blocks to show and with what props; all copy comes from CMS settings/modules. This prevents "half-built" pages while ensuring nothing is invented.
 4. **Honest content markers.** `is_sample`, `is_placeholder`, `is_verified`, `verified` (metrics), `approved_at` (testimonials), `completed` (certs) gate what renders publicly.
 5. **Server-first rendering.** Public pages are RSC; client components are isolated to truly interactive bits.

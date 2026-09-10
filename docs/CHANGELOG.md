@@ -11,6 +11,13 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 ## [Unreleased]
 
 ### Added
+- **2026-09-10 — Tech portfolio completion and bug fixes.** 
+  - Integrated the global `<PublicForm />` logic into the single-page Tech Portfolio form (`/tech-portfolio`), bringing background AJAX submissions, validation, and CSRF token support over from the standard `/contact` route. 
+  - Added a `subject` column to the `contact_submission` schema to capture specific inquiry details (used exclusively by the Tech variant).
+  - Built a `newsletter_subscriber` backend feature (table and `/api/newsletter` endpoint) to process email captures, ignoring unique constraints gracefully. Replaced the fake `action="#"` forms in `TechFooter` and `SiteFooter` with the interactive `<NewsletterForm />` client component.
+  - Linked real profile URLs across the platform using `scripts/update-socials.ts` and dynamic CMS data to drive the "View My GitHub" buttons and social footprint.
+  - Resolved a missing asset issue by tracking a dummy `My Resume.pdf` directly in the `public` directory, and properly configuring both Tech Portfolio "Download Resume" buttons to fall back to it.
+
 - **2026-09-09 — `/tech-portfolio` canonical route for the Tech Portfolio.** New `src/app/tech-portfolio/page.tsx` renders the same `TechPortfolioPage` single-page experience at `/tech-portfolio`; `/tech` intentionally keeps serving it (legacy bookmarks, DB-driven nav rows) and all `/tech/<section>` sub-routes are untouched. Internal code links now point at the new path: hero "Explore Technology" CTA and `two_worlds` tech card (`blocks/heroes.tsx`, `blocks/catalog.tsx` + the `techHref` block-prop default in `lib/cms/blocks.ts`), `ExperienceShell` tech `homeHref`/CTA, `PageHeader` tech crumb, `ProjectDetailView` back link, `TechFooter` service anchors, the public 404 page, the admin dashboard quick link, the `main_footer` "— Tech portfolio" seed row, and the sitemap static route list (which now lists `/tech-portfolio` instead of `/tech`). No middleware or domain changes; no new env vars.
 
 - Initialized the persistent `/docs` knowledge base (`PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `DEVELOPMENT_STATUS.md`, `CHANGELOG.md`, `AI_INSTRUCTIONS.md`) to give future developers and AI agents an accurate, code-grounded map of the project.
