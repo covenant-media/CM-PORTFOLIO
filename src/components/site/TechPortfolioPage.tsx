@@ -159,7 +159,7 @@ export default async function TechPortfolioPage() {
   const firstName = nameParts[0] || 'Covenant';
   const lastName = nameParts.slice(1).join(' ');
   const socials = ctx.social.length > 0 ? ctx.social : defaultSocials();
-  const resumePdfUrl = resume?.url || '/my%20resume.pdf';
+  const resumePdfUrl = resume?.url || '/My%20Resume.pdf';
 
   return (
     <div className="theme-tech relative flex min-h-dvh flex-col overflow-x-clip">
