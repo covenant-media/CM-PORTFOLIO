@@ -8,6 +8,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from '@/components/ui/Icon';
+import { PublicForm } from '@/components/forms/PublicForm';
+import { issueFormToken } from '@/lib/security/forms';
+import { FORM_CONFIGS } from '@/lib/cms/forms';
+import { getSetting } from '@/lib/cms/settings';
 import { Section, SectionHeader, Eyebrow } from '@/components/ui/Section';
 import { Button } from '@/components/ui/Button';
 import { FadeIn, Tilt, CountUp, SpotlightCard, Parallax } from '@/components/ui/Motion';
@@ -66,8 +70,8 @@ const INTRO =
 const LOCATION = 'Lagos / Akwa Ibom, Nigeria';
 const PHONE = '09064095620';
 const PHONE_TEL = '+2349064095620';
-const EMAIL = 'covenantmedia0015@gmail.com';
-const WHATSAPP = 'https://wa.me/2349064095620';
+const EMAIL = 'covenantmedia015@gmail.com';
+const WHATSAPP = 'https://wa.link/ufa5k5';
 const AVAILABILITY = 'Available: 24/7';
 
 // Portraits uploaded to the repo at public/images (served statically).
@@ -140,19 +144,22 @@ const TESTIMONIALS: Array<{ quote: string; name: string; title: string }> = [
 ];
 
 export default async function TechPortfolioPage() {
-  const [ctx, projectResult, resume] = await Promise.all([
+  const [ctx, projectResult, resume, turnstileKey, successMessage] = await Promise.all([
     siteContext(),
     projectCards({ division: 'tech', limit: 6 }),
     activeResume().catch(() => null as ResumeInfo | null),
+    getSetting('forms.turnstile_site_key').catch(() => null),
+    getSetting(FORM_CONFIGS.tech.successSetting).catch(() => null),
   ]);
+  const token = issueFormToken();
   const projects = projectResult.cards;
   const cmsName = String(ctx.settings['founder.name'] ?? '').trim();
   const name = cmsName && cmsName !== 'Abraham James' ? cmsName : NAME;
   const nameParts = name.trim().split(' ');
   const firstName = nameParts[0] || 'Covenant';
   const lastName = nameParts.slice(1).join(' ');
-  const socials = defaultSocials();
-  const resumePdfUrl = resume?.url || '/uploads/Covenant-Nsikan-Resume.pdf';
+  const socials = ctx.social.length > 0 ? ctx.social : defaultSocials();
+  const resumePdfUrl = resume?.url || '/my%20resume.pdf';
 
   return (
     <div className="theme-tech relative flex min-h-dvh flex-col overflow-x-clip">
@@ -413,7 +420,7 @@ export default async function TechPortfolioPage() {
               ) : null}
             </div>
             <div className="mt-10 text-center">
-              <Button href="https://github.com/" variant="outline" icon="github">View My GitHub</Button>
+              <Button href={socials.find(s => s.network === 'github')?.url || 'https://github.com/covenant-media'} variant="outline" icon="github" newTab>View My GitHub</Button>
             </div>
           </div>
         </Section>
@@ -505,25 +512,15 @@ export default async function TechPortfolioPage() {
               </div>
 
               <FadeIn className="lg:col-span-7">
-                <form action="/api/forms" method="post" className="space-y-4 rounded-4 border border-[rgba(243,241,236,.1)] bg-[color:var(--color-ink-900)]/80 p-7 shadow-[var(--shadow-2)] backdrop-blur" data-analytics="form_submit" data-form="tech">
-                  <input type="hidden" name="form" value="tech" />
-                  <Field label="Your Full Name" name="name" placeholder="John Doe" required />
-                  <Field label="Your Email Address" name="email" type="email" placeholder="you@email.com" required />
-                  <Field label="Subject" name="subject" placeholder="Project inquiry" />
-                  <label className="block">
-                    <span className="mb-1.5 block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-fg-dim">Your Message</span>
-                    <textarea name="message" required rows={5} placeholder="Tell me about your project, timeline and budget..." className="w-full resize-none rounded-2 border border-[rgba(243,241,236,.12)] bg-[color:var(--color-ink-950)]/70 px-4 py-3 text-[0.9375rem] text-fg outline-none transition placeholder:text-fg-dim focus:border-[var(--accent)]/60 focus:bg-[color:var(--color-ink-950)]" />
-                  </label>
-                  <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                    <label className="flex items-start gap-2 text-[11.5px] text-fg-dim">
-                      <input type="checkbox" name="consent" required defaultChecked className="mt-0.5 accent-[var(--accent)]" />
-                      I&apos;m okay with my message being stored to receive a reply.
-                    </label>
-                    <button type="submit" className="group inline-flex items-center gap-2 rounded-pill bg-[var(--accent)] px-6 py-3 text-[0.9375rem] font-medium text-[var(--accent-ink)] transition hover:brightness-[1.08] hover:-translate-y-px">
-                      Send Message <Icon name="send" size={14} className="transition group-hover:translate-x-0.5" />
-                    </button>
-                  </div>
-                </form>
+                <div className="rounded-4 border border-[rgba(243,241,236,.1)] bg-[color:var(--color-ink-900)]/80 p-7 shadow-[var(--shadow-2)] backdrop-blur">
+                  <PublicForm
+                    config={FORM_CONFIGS.tech}
+                    action="/api/forms"
+                    token={token}
+                    turnstileSiteKey={turnstileKey || null}
+                    successMessage={successMessage}
+                  />
+                </div>
               </FadeIn>
             </div>
           </div>
@@ -574,14 +571,6 @@ export default async function TechPortfolioPage() {
 
 const STACK = ['TypeScript', 'Next.js', 'React', 'Node.js', 'Postgres', 'TailwindCSS', 'AWS', 'Figma', 'GRC', 'Cybersecurity', 'REST APIs'];
 
-function Field({ label, name, type = 'text', placeholder, required }: { label: string; name: string; type?: string; placeholder?: string; required?: boolean }) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-fg-dim">{label}{required ? ' *' : ''}</span>
-      <input name={name} type={type} required={required} placeholder={placeholder} className="w-full rounded-2 border border-[rgba(243,241,236,.12)] bg-[color:var(--color-ink-950)]/70 px-4 py-3 text-[0.9375rem] text-fg outline-none transition placeholder:text-fg-dim focus:border-[var(--accent)]/60 focus:bg-[color:var(--color-ink-950)]" />
-    </label>
-  );
-}
 
 function ContactInfoTile({ icon, label, value, href, external }: { icon: string; label: string; value: string; href?: string; external?: boolean }) {
   // Filled accent circle icons, matching the getintouch.PNG reference.
@@ -638,11 +627,12 @@ function ProjectCardComponent({ project }: { project: ProjectCard }) {
 
 function defaultSocials(): SocialItem[] {
   return [
-    { network: 'github', url: 'https://github.com/', label: 'GitHub' } as SocialItem,
-    { network: 'linkedin', url: 'https://linkedin.com/', label: 'LinkedIn' } as SocialItem,
-    { network: 'x', url: 'https://x.com/', label: 'X' } as SocialItem,
-    { network: 'instagram', url: 'https://instagram.com/', label: 'Instagram' } as SocialItem,
-    { network: 'whatsapp', url: WHATSAPP, label: 'WhatsApp' } as SocialItem,
-    { network: 'mail', url: `mailto:${EMAIL}`, label: 'Email' } as SocialItem,
+    { network: 'github', url: 'https://github.com/covenant-media', label: 'GitHub' } as SocialItem,
+    { network: 'linkedin', url: 'https://www.linkedin.com/in/covenant-media-021b242a3', label: 'LinkedIn' } as SocialItem,
+    { network: 'x', url: 'https://x.com/Covenant__media', label: 'X' } as SocialItem,
+    { network: 'instagram', url: 'https://www.instagram.com/covenant_media_tv', label: 'Instagram' } as SocialItem,
+    { network: 'youtube', url: 'https://youtube.com/@covenant_media', label: 'YouTube' } as SocialItem,
+    { network: 'whatsapp', url: 'https://wa.link/ufa5k5', label: 'WhatsApp' } as SocialItem,
+    { network: 'mail', url: `mailto:covenantmedia015@gmail.com`, label: 'Email' } as SocialItem,
   ];
 }

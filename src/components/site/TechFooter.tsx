@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
 import type { NavItem, SocialItem } from '@/lib/types/content';
 
+import { NewsletterForm } from '@/components/forms/NewsletterForm';
+
 export interface TechFooterProps {
   name: string;
   role: string;
@@ -109,27 +111,11 @@ export function TechFooter({ name, role, nav, socials, contact, ctaLabel, ctaHre
               {contact.responseTime ? <li className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-fg-dim">{contact.responseTime}</li> : null}
             </ul>
 
-            <form action="#" method="post" className="mt-5">
+            <div className="mt-5">
               <label htmlFor="tech-nl" className="eyebrow block">Newsletter</label>
               <p className="mt-1 text-[0.8125rem] text-fg-dim">Subscribe for insights and updates.</p>
-              <div className="mt-3 flex overflow-hidden rounded-pill border border-[rgba(243,241,236,.14)] bg-[rgba(243,241,236,.03)] p-1 transition focus-within:border-[var(--accent)]/50">
-                <input
-                  id="tech-nl"
-                  type="email"
-                  name="email"
-                  required
-                  placeholder="Your email"
-                  aria-label="Email for newsletter"
-                  className="min-w-0 flex-1 bg-transparent px-3 py-1.5 text-[0.8rem] text-fg placeholder:text-fg-dim focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="shrink-0 rounded-pill bg-[var(--accent)] px-3 py-1.5 text-[0.7rem] font-medium uppercase tracking-[0.1em] text-[var(--accent-ink)] transition hover:brightness-105"
-                >
-                  Subscribe
-                </button>
-              </div>
-            </form>
+              <NewsletterForm source="tech-footer" />
+            </div>
 
             <Link href={ctaHref} className="mt-5 inline-flex items-center gap-2 rounded-pill border border-[var(--accent)]/25 px-4 py-2 text-[0.8rem] font-medium text-[var(--accent)] transition hover:bg-[var(--accent)]/10">
               {ctaLabel} <Icon name="arrow-right" size={12} />

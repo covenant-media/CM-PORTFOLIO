@@ -6,8 +6,6 @@
 import {
   BUDGET_BANDS,
   MEDIA_SERVICE_OPTIONS,
-  TECH_BUDGET_BANDS,
-  TECH_PROJECT_TYPE_OPTIONS,
   TIMELINE_OPTIONS,
 } from './options';
 
@@ -149,27 +147,8 @@ export const FORM_CONFIGS: Record<FormVariant, PublicFormConfig> = {
     fields: [
       name,
       email,
-      { name: 'organization', label: 'Organisation', type: 'text', width: 'half', maxLength: 120 },
-      { name: 'phone', label: 'Phone / WhatsApp', type: 'tel', width: 'half', maxLength: 40 },
-      { name: 'project_type', label: 'Project type', type: 'select', required: true, width: 'half', options: [...TECH_PROJECT_TYPE_OPTIONS] },
-      {
-        name: 'service',
-        label: 'Engagement shape',
-        type: 'select',
-        width: 'half',
-        options: [
-          { value: 'build_from_scratch', label: 'Build from scratch' },
-          { value: 'improve_existing', label: 'Improve an existing product' },
-          { value: 'rescue', label: 'Rescue / rebuild' },
-          { value: 'audit', label: 'Audit / assessment' },
-          { value: 'retainer', label: 'Ongoing support' },
-          { value: 'design_only', label: 'Design only' },
-        ],
-      },
-      { name: 'requirements', label: 'Key requirements', type: 'textarea', required: true, rows: 5, maxLength: 6000, placeholder: 'Users, platforms, integrations, compliance needs, current stack.' },
-      { name: 'budget_band', label: 'Budget range', type: 'select', width: 'half', options: [...TECH_BUDGET_BANDS] },
-      { name: 'timeline', label: 'Timeline', type: 'select', width: 'half', options: [...TIMELINE_OPTIONS] },
-      { name: 'message', label: 'Anything else', type: 'textarea', rows: 3, maxLength: 4000, placeholder: 'Links, docs, context, deadlines that matter.' },
+      { name: 'subject', label: 'Subject', type: 'text', width: 'full', maxLength: 160, placeholder: 'Project inquiry' },
+      { name: 'message', label: 'Your Message', type: 'textarea', required: true, rows: 5, maxLength: 6000, placeholder: 'Tell me about your project, timeline and budget...' },
     ],
   },
 };
@@ -177,6 +156,7 @@ export const FORM_CONFIGS: Record<FormVariant, PublicFormConfig> = {
 export const FORM_FIELD_LIMITS: Record<string, number> = {
   name: 90,
   email: 160,
+  subject: 160,
   phone: 40,
   organization: 160,
   service: 60,
@@ -191,5 +171,5 @@ export const FORM_FIELD_LIMITS: Record<string, number> = {
 export const REQUIRED_FIELDS: Record<FormVariant, string[]> = {
   main: ['name', 'email', 'message'],
   media: ['name', 'email', 'phone', 'service', 'project_type', 'message'],
-  tech: ['name', 'email', 'project_type', 'requirements'],
+  tech: ['name', 'email', 'message'],
 };

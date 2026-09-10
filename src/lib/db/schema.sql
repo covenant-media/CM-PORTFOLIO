@@ -513,6 +513,7 @@ CREATE TABLE IF NOT EXISTS contact_submission (
   form          TEXT NOT NULL,                 -- main | media | tech
   name          TEXT NOT NULL,
   email         TEXT NOT NULL,
+  subject       TEXT,
   phone         TEXT,
   organization  TEXT,
   service       TEXT,
@@ -534,6 +535,14 @@ CREATE TABLE IF NOT EXISTS contact_submission (
 );
 CREATE INDEX IF NOT EXISTS idx_submission_created ON contact_submission(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_submission_status ON contact_submission(status, form);
+
+CREATE TABLE IF NOT EXISTS newsletter_subscriber (
+  id            TEXT PRIMARY KEY,
+  email         TEXT NOT NULL UNIQUE,
+  source        TEXT NOT NULL DEFAULT 'footer',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_newsletter_created ON newsletter_subscriber(created_at DESC);
 
 CREATE TABLE IF NOT EXISTS seo_record (
   id              TEXT PRIMARY KEY,

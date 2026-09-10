@@ -31,6 +31,7 @@ export const CMS_MODULE_KEYS = [
   'contact_info',
   'blog',
   'seo',
+  'newsletter_subscribers',
   'submissions',
   'featured',
   'account',

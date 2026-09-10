@@ -113,6 +113,7 @@ export async function POST(request: Request) {
       form: variant,
       name: values.name.slice(0, 90),
       email: values.email.toLowerCase().slice(0, 160),
+      subject: values.subject || null,
       phone: values.phone || null,
       organization: values.organization || null,
       service: values.service || null,
@@ -166,7 +167,7 @@ async function notify(variant: FormVariant, values: Record<string, string>, requ
       body: JSON.stringify({
         from: process.env.NOTIFY_FROM ?? 'Covenant CMS <onboarding@resend.dev>',
         to: [to],
-        subject: `New ${variant} enquiry — ${values.name}`,
+        subject: values.subject ? `${values.subject} — ${values.name}` : `New ${variant} enquiry — ${values.name}`,
         text: `${lines}\n\nPage: ${request.headers.get('referer') ?? 'unknown'}`,
         reply_to: values.email,
       }),

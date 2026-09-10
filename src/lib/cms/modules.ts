@@ -1185,6 +1185,28 @@ export const CMS_MODULES: CmsModuleDef[] = [
     ],
   },
   {
+    key: 'newsletter_subscribers',
+    label: 'Newsletter subscribers',
+    singular: 'Subscriber',
+    group: 'System',
+    icon: 'mail',
+    description: 'People who subscribed to the newsletter.',
+    table: 'newsletter_subscriber',
+    editor: 'collection',
+    primary: 'email',
+    columns: [
+      { key: 'email', label: 'Email', type: 'text' },
+      { key: 'source', label: 'Source', type: 'text' },
+      { key: 'created_at', label: 'Subscribed on', type: 'date' },
+    ],
+    search: ['email', 'source'],
+    defaultSort: 'ORDER BY created_at DESC',
+    fields: [
+      { key: 'email', label: 'Email Address', type: 'email', required: true },
+      { key: 'source', label: 'Source', type: 'text' },
+    ],
+  },
+  {
     key: 'submissions',
     label: 'Contact submissions',
     singular: 'Submission',
@@ -1201,7 +1223,7 @@ export const CMS_MODULES: CmsModuleDef[] = [
       { key: 'status', label: 'Status', type: 'status' },
       { key: 'created_at', label: 'Received', type: 'date' },
     ],
-    search: ['name', 'email', 'message', 'organization'],
+    search: ['name', 'email', 'message', 'organization', 'subject'],
     defaultSort: 'ORDER BY created_at DESC',
     fields: [
       { key: 'status', label: 'Status', type: 'select', default: 'new', options: [{ value: 'new', label: 'New' }, { value: 'read', label: 'Read' }, { value: 'replied', label: 'Replied' }, { value: 'archived', label: 'Archived' }, { value: 'spam', label: 'Spam' }] },
