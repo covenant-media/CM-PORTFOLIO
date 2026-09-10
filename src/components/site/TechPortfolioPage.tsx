@@ -145,7 +145,10 @@ export default async function TechPortfolioPage() {
     projectCards({ division: 'tech', limit: 6 }),
     activeResume().catch(() => null as ResumeInfo | null),
   ]);
-  const projects = projectResult.cards;
+  // Featured projects: only real (CMS-entered) work renders here. Sample/placeholder
+  // projects are hidden so the section shows the honest "Portfolio coming soon" state
+  // until real case studies are published — they then appear here automatically.
+  const projects = projectResult.cards.filter((p) => !p.isSample);
   const cmsName = String(ctx.settings['founder.name'] ?? '').trim();
   const name = cmsName && cmsName !== 'Abraham James' ? cmsName : NAME;
   const nameParts = name.trim().split(' ');
