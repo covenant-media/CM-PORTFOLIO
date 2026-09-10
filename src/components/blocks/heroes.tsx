@@ -310,14 +310,35 @@ export async function HeroMedia({ block, videos, settings }: { block: SectionDat
               ))}
             </ul>
           ) : null}
+
+          {/* Honest meta strip: location + availability come from Site settings, never invented. */}
+          {[setting(settings, 'contact.location'), truncate(setting(settings, 'founder.availability'), 90)].filter(Boolean).length ? (
+            <ul className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[rgba(243,241,236,.1)] pt-5 font-mono text-[0.6875rem] uppercase tracking-[0.15em] text-fg-dim">
+              {setting(settings, 'contact.location') ? (
+                <li className="inline-flex items-center gap-2">
+                  <Icon name="pin" size={12} className="text-[var(--accent)]" /> {setting(settings, 'contact.location')}
+                </li>
+              ) : null}
+              {truncate(setting(settings, 'founder.availability'), 90) ? (
+                <li className="inline-flex items-center gap-2">
+                  <span aria-hidden className="relative flex size-1.5">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent)] opacity-60 motion-reduce:hidden" />
+                    <span className="relative size-1.5 rounded-full bg-[var(--accent)]" />
+                  </span>
+                  {truncate(setting(settings, 'founder.availability'), 90)}
+                </li>
+              ) : null}
+            </ul>
+          ) : null}
         </div>
 
-        {variant === 'strip' || preview.length ? (
-          <div className={cx('mt-12 lg:hidden', variant === 'floating' && 'hidden')}>
-            <MobileStrip videos={preview} props={props} />
-          </div>
-        ) : null}
-        {variant === 'strip' && preview.length ? <MobileStrip videos={preview} props={props} className="mt-12 hidden lg:block" /> : null}
+          {/* Mobile always gets a swipeable preview strip — the floating card wall is desktop-only. */}
+          {preview.length ? (
+            <div className="mt-12 lg:hidden">
+              <MobileStrip videos={preview} props={props} />
+            </div>
+          ) : null}
+          {variant === 'strip' && preview.length ? <MobileStrip videos={preview} props={props} className="mt-12 hidden lg:block" /> : null}
       </div>
 
       {preview.length === 0 ? (

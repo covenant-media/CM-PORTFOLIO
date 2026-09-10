@@ -293,16 +293,38 @@ function ArticleBody({
               </aside>
             </div>
 
-            {project.technologies.length ? (
-              <div className="mt-14 border-t border-[rgba(243,241,236,.09)] pt-7">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <span className="font-mono text-[0.5625rem] uppercase tracking-[0.16em] text-fg-dim">Stack</span>
-                  {project.technologies.map((tech) => (
-                    <span key={tech} className="rounded-pill border border-[rgba(243,241,236,.1)] px-2.5 py-1 font-mono text-[0.625rem] uppercase tracking-[0.1em] text-fg-muted">
-                      {tech}
-                    </span>
-                  ))}
-                </div>
+            {project.technologies.length || project.services.length || project.tools.length ? (
+              <div className="mt-14 space-y-4 border-t border-[rgba(243,241,236,.09)] pt-7">
+                {project.services.length ? (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <span className="font-mono text-[0.5625rem] uppercase tracking-[0.16em] text-fg-dim">Services</span>
+                    {project.services.map((service) => (
+                      <span key={service} className="rounded-pill border border-[color-mix(in_oklab,var(--accent)_30%,transparent)] bg-[color-mix(in_oklab,var(--accent)_7%,transparent)] px-2.5 py-1 text-[0.6875rem] text-fg-muted">
+                        {service}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {project.technologies.length ? (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <span className="font-mono text-[0.5625rem] uppercase tracking-[0.16em] text-fg-dim">Stack</span>
+                    {project.technologies.map((tech) => (
+                      <span key={tech} className="rounded-pill border border-[rgba(243,241,236,.1)] px-2.5 py-1 font-mono text-[0.625rem] uppercase tracking-[0.1em] text-fg-muted">
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {project.tools.length ? (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <span className="font-mono text-[0.5625rem] uppercase tracking-[0.16em] text-fg-dim">Toolkit</span>
+                    {project.tools.map((tool) => (
+                      <span key={tool} className="rounded-pill border border-[rgba(243,241,236,.1)] px-2.5 py-1 font-mono text-[0.625rem] uppercase tracking-[0.1em] text-fg-muted">
+                        {tool}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>

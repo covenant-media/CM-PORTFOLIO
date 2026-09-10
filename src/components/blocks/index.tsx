@@ -24,6 +24,7 @@ import {
   galleriesFor,
   postsFor,
   pricingFor,
+  projectCards,
   projectCountFor,
   servicesFor,
   siteContext,
@@ -37,10 +38,11 @@ import type { AssetRef, SectionData } from '@/lib/types/content';
 import { HeroBrand, HeroMedia, HeroTech, PageHeader } from './heroes';
 import { AboutSplit, LogoMarquee, ProjectGrid, ServiceGrid, Statement, StatsBand, TwoWorlds, RichText } from './catalog';
 import { BlogPreview, Faq, PhotoStrip, ProcessTimeline, TeamGrid, ToolsGrid, VideoWall } from './media';
+import { FeaturedWork, PhotoGallery, ShortFormRail, ThumbnailWall } from './media-showcase';
 import { Certifications, PricingTable, ResumeBlock, TestimonialWall } from './trust';
 import { ExperienceTimeline, SkillMatrix } from './tech';
 import { ContactBlock } from './contact';
-import { idsOf, type Division } from './helpers';
+import { idsOf, pb, ps, pstrs, type Division } from './helpers';
 
 export type { Division };
 
@@ -145,6 +147,51 @@ export async function Block({ block, scope, index = 0 }: { block: SectionData; s
       const videos = ids.length ? await videosByIds(ids) : await featuredVideos({ limit: Number(props.limit ?? 8), form: props.form ? String(props.form) : null });
       return <VideoWall block={block} videos={videos} />;
     }
+    case 'featured_work': {
+      const limit = Number(props.limit ?? 4);
+      let projects = pb(props, 'featuredOnly', true)
+        ? (await projectCards({ division: 'media', featured: true, limit })).cards
+        : [];
+      // A single featured row reads as a mistake — top it up with the newest work.
+      if (projects.length < 2) {
+        const recent = (await projectCards({ division: 'media', limit })).cards;
+        const seen = new Set(projects.map((card) => card.id));
+        projects = [...projects, ...recent.filter((card) => !seen.has(card.id))].slice(0, limit);
+      }
+      return <FeaturedWork block={block} projects={projects} />;
+    }
+    case 'short_form_rail': {
+      const ids = idsOf(props.videoIds);
+      const videos = ids.length ? await videosByIds(ids) : await featuredVideos({ limit: Number(props.limit ?? 8), form: 'short_form' });
+      return <ShortFormRail block={block} videos={videos} />;
+    }
+    case 'photo_gallery': {
+      const ids = idsOf(props.images);
+      let images: AssetRef[] = [];
+      let gallery = null as Awaited<ReturnType<typeof galleriesFor>>[number] | null;
+      if (ids.length) {
+        const map = await assetsByIds(ids);
+        images = ids.map((id) => map[id]).filter(Boolean);
+      } else {
+        const list = await galleriesFor(division === 'tech' ? 'tech' : 'media', { limit: 12, kind: props.kind ? String(props.kind) : undefined });
+        const slug = props.gallerySlug ? String(props.gallerySlug) : '';
+        gallery = (slug && slug !== 'all' ? list.find((item) => item.slug === slug) : list[0]) ?? null;
+      }
+      return <PhotoGallery block={block} gallery={gallery} images={images} />;
+    }
+    case 'thumbnail_wall': {
+      const category = props.category === undefined ? 'thumbnail_design' : String(props.category ?? '');
+      const result = await projectCards({ division: 'media', category: category || undefined, limit: Number(props.limit ?? 6) });
+      let images: AssetRef[] = [];
+      if (!result.cards.length) {
+        const ids = idsOf(props.images);
+        if (ids.length) {
+          const map = await assetsByIds(ids);
+          images = ids.map((id) => map[id]).filter(Boolean);
+        }
+      }
+      return <ThumbnailWall block={block} projects={result.cards} images={images} />;
+    }
     case 'photo_strip': {
       const ids = idsOf(props.images);
       let images: AssetRef[] = [];
@@ -171,15 +218,28 @@ export async function Block({ block, scope, index = 0 }: { block: SectionData; s
       return <ProcessTimeline block={block} steps={steps} />;
     }
     case 'tools_grid': {
-      const groups = await skillsGrouped();
-      const aggregated = Array.from(
-        new Set(
-          groups
-            .flatMap((group) => group.skills)
-            .map((skill) => skill.evidence ?? '')
-            .filter((value) => value.length > 0 && value.length < 40),
-        ),
-      );
+      // Source-aware: the editor can point at services or projects; the fallback
+      // aggregation is skills on tech (as before) and service tools on media.
+      const manualList = pstrs(props, 'items');
+      const source = ps(props, 'source', 'manual');
+      let aggregated: string[] = [];
+      if (source === 'projects') {
+        const result = await projectCards({ division: division === 'tech' ? 'tech' : 'media', limit: 60 });
+        aggregated = Array.from(new Set(result.cards.flatMap((card) => card.technologies)));
+      } else if (source === 'services' || (!manualList.length && division === 'media')) {
+        const services = await servicesFor(division === 'tech' ? ['tech'] : division === 'media' ? ['media'] : ['media', 'tech']);
+        aggregated = Array.from(new Set(services.flatMap((service) => service.tools ?? [])));
+      } else if (!manualList.length) {
+        const groups = await skillsGrouped();
+        aggregated = Array.from(
+          new Set(
+            groups
+              .flatMap((group) => group.skills)
+              .map((skill) => skill.evidence ?? '')
+              .filter((value) => value.length > 0 && value.length < 40),
+          ),
+        );
+      }
       return <ToolsGrid block={block} aggregated={aggregated} />;
     }
 

@@ -72,7 +72,7 @@ Covenant Media is a **monolithic Next.js 15 App Router application** that runs b
 - Design tokens live in `src/app/globals.css` under `@theme { … }` (Tailwind v4 convention).
 - Experiences are scoped by a wrapper class: `.theme-main`, `.theme-media`, `.theme-tech`, `.theme-admin`. Each defines `--accent`, `--accent-soft`, `--accent-ink`, `--accent-glow`, `--surface-tone`, and `--motion-tempo`.
 - Components must read tokens via `var(--accent)`/utility classes (`accent-text`, `accent-bg`, `hairline`, `surface`, `eyebrow`, `display-1..4`, `lede`) — never hard-code colors.
-- Reusable primitives live in `src/components/ui/`: `Button`, `Icon`, `Lightbox`, `Marquee`, `Media`/`MediaTile`, `Motion`, `Pager`, `Reveal`, `Section` (incl. `EmptyState`), `SiteBehaviours`.
+- Reusable primitives live in `src/components/ui/`: `Button`, `Icon`, `Lightbox`, `Marquee`, `Media`/`MediaTile`, `Motion`, `Pager`, `Rail` (snap-scroll rail with arrow controls, edge fades, reduced-motion aware), `Reveal`, `Section` (incl. `EmptyState`), `SiteBehaviours`.
 - Site-specific components (`SiteHeader`, `SiteFooter`, `Logo`, `WorkCard`, `CatalogView`, `ProjectDetailView`, `ArticleView`, `MediaBand`, `ExperienceShell`) live in `src/components/site/`.
 - Block renderers live in `src/components/blocks/` and are all async server components (some do their own data loading).
 

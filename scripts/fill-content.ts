@@ -191,8 +191,72 @@ async function main() {
     if (mediaHero) {
       await setBlock(mediaHero.block_id, {
         eyebrow: 'Covenant Media — portfolio',
-        headline: 'Films that feel like the day did.',
+        headline: 'WE CAPTURE.\nWE CREATE.\nWE INSPIRE.',
         body: 'Event coverage, weddings and brand films. Quiet cameras, solid audio, edits cut to real moments not a trend reel.',
+      });
+    }
+    const featured = pageBlocks('media', 'featured_work')[0];
+    if (featured) {
+      await setBlock(featured.block_id, {
+        eyebrow: 'Featured work',
+        headline: 'Films that lead with a moment.',
+        body: 'A few projects that show the range — full coverage days, brand films and edits, each cut to what the day actually felt like.',
+      });
+    }
+    const shortForm = pageBlocks('media', 'short_form_rail')[0];
+    if (shortForm) {
+      await setBlock(shortForm.block_id, {
+        eyebrow: 'Short-form',
+        headline: 'Made for the feed.',
+        body: 'Vertical cutdowns and social edits built for TikTok, Reels and Shorts — fast, captioned, and cut to hold the first three seconds.',
+      });
+    }
+    const thumbnailWall = pageBlocks('media', 'thumbnail_wall')[0];
+    if (thumbnailWall) {
+      await setBlock(thumbnailWall.block_id, {
+        eyebrow: 'Graphic work',
+        headline: 'Covers that earn the click.',
+        body: 'Thumbnail and cover design for channels, sermons and campaigns — built to read at phone size and stay on-brand across every crop.',
+      });
+    }
+    const photoGallery = pageBlocks('media', 'photo_gallery')[0];
+    if (photoGallery) {
+      await setBlock(photoGallery.block_id, {
+        eyebrow: 'Photography',
+        headline: 'Stills that hold still.',
+        body: 'Event, portrait and product photography from the same shoots — framed, backed up and delivered alongside the films.',
+      });
+    }
+    const mediaProcess = pageBlocks('media', 'process_timeline')[0];
+    if (mediaProcess) {
+      await setBlock(mediaProcess.block_id, {
+        eyebrow: 'Process',
+        headline: 'Brief to delivery, without mystery.',
+        body: 'The same five steps whether it is a wedding, a convention or a product launch — edited per project in the CMS.',
+        props: JSON.stringify({
+          layout: 'numbered',
+          steps: [
+            { title: 'Discovery', description: 'A short call or chat: what is happening, where, who it is for, and what “done” looks like.', duration: '1–2 days' },
+            { title: 'Planning', description: 'Shot list, gear, crew and a timeline that leaves room for the moments nobody can script.', duration: '2–5 days' },
+            { title: 'Production', description: 'Coverage day(s): multiple cameras, clean audio, backups running before the first frame.', duration: 'Event day' },
+            { title: 'Edit', description: 'Assembly, colour, sound and captions — you review a cut and it is revised until it is right.', duration: '3–10 days' },
+            { title: 'Delivery', description: 'Masters, cutdowns for social, and stills — handed over in organised folders, not a zip of chaos.', duration: '1 day' },
+          ],
+        }),
+      });
+    }
+    const mediaAbout = pageBlocks('media', 'about_split')[0];
+    if (mediaAbout) {
+      await setBlock(mediaAbout.block_id, {
+        eyebrow: 'About',
+        headline: 'The person behind the camera.',
+        body: [
+          'Covenant Media is run by **Covenant Nsikan** — a filmmaker and editor who also builds software, which is why the process feels unusually organised for a creative service.',
+          '',
+          'The media side is about storytelling: event films, brand work and photography with an editor’s eye for pacing and colour. The technology side is why deadlines, backups and delivery folders are treated like production systems.',
+        ].join('\n\n'),
+        props: JSON.stringify({ align: 'default', showSocial: true }),
+        media: JSON.stringify([{ asset_id: 'ast_demo_portrait', role: 'primary', caption: null, alt: 'Portrait — Covenant Nsikan (sample)' }]),
       });
     }
     const mediaStatement = pageBlocks('media', 'two_worlds')[0];
@@ -222,7 +286,7 @@ async function main() {
   // Pages to create (slug, title, navLabel, surface, description, blocks)
   const newPages: Array<{
     slug: string; title: string; navLabel: string; surface: string; description: string;
-    blocks: Array<{ type: string; name: string; eyebrow?: string; headline?: string; body?: string; props?: Record<string, unknown>; links?: Array<{ label: string; href: string; variant: string }> }>;
+    blocks: Array<{ type: string; name: string; eyebrow?: string; headline?: string; body?: string; props?: Record<string, unknown>; media?: Array<Record<string, unknown>>; links?: Array<{ label: string; href: string; variant: string }> }>;
   }> = [
     // /media/about
     {
@@ -235,7 +299,7 @@ async function main() {
           'Crew is kept deliberately small. Two cameras and an audio kit cover most days; a second shooter and a sound recordist are brought in when the brief actually needs them, not because it looks impressive on a quote.',
           '',
           'Edits are cut in DaVinci Resolve, colour is finished by hand, and nothing leaves the edit suite with a stock music bed that drowned out the room.',
-        ].join('\n\n'), props: { align: 'default' } },
+        ].join('\n\n'), props: { align: 'default' }, media: [{ asset_id: 'ast_demo_portrait', role: 'primary', caption: null, alt: 'Portrait — Covenant Nsikan (sample)' }] },
         { type: 'statement', name: 'Media philosophy', eyebrow: 'What you get', headline: 'A crew that blends in, footage that is backed up before we leave, and a cut that remembers the people in it.', body: 'If that sounds boring, good. Weddings and events are boring to shoot correctly until they are not — and the job is to be ready for that moment.', props: { variant: 'split' } },
         { type: 'photo_strip', name: 'BTS frames', props: { gallerySlug: 'sample-behind-the-scenes', layout: 'grid' } },
         { type: 'contact_block', name: 'Media contact', props: { variant: 'media' } },
@@ -249,6 +313,7 @@ async function main() {
         { type: 'page_header', name: 'Media services header', eyebrow: 'Services', headline: 'Media production, end to end.', body: 'Shoots, edits, colour and delivery. Pick a shape, we will scope it honestly.' },
         { type: 'service_grid', name: 'Media services grid', props: { division: 'media', limit: 12, layout: 'grid' }, eyebrow: 'Capabilities' },
         { type: 'process_timeline', name: 'Media process steps', eyebrow: 'How we work', headline: 'How a shoot moves from brief to delivery.', body: 'Every engagement goes through the same six stages. Numbers below are for a typical event coverage — brand films and weddings scale up and down but the shape stays the same.', props: { serviceSlug: 'sample-event-coverage', layout: 'numbered' } },
+        { type: 'tools_grid', name: 'Media tools', props: { layout: 'grid', source: 'services' }, eyebrow: 'Toolkit', headline: 'The kit and the software.', body: 'Cameras, audio and the post pipeline the work runs on. The manual list in the CMS overrides this automatically.' },
         { type: 'contact_block', name: 'Media contact', props: { variant: 'media' } },
       ],
     },
@@ -276,7 +341,9 @@ async function main() {
       slug: 'media/work', title: 'Selected Media Work', navLabel: 'Work', surface: 'media',
       description: 'Filterable catalog of media projects.',
       blocks: [
-        { type: 'project_grid', name: 'Media work grid', props: { division: 'media', limit: 12, layout: 'mosaic' } },
+        // The route itself renders the filterable, paginated ProjectCatalog below the
+        // page header — a project_grid here would duplicate it (and ignore the filters).
+        { type: 'page_header', name: 'Work header', eyebrow: 'Work', headline: 'The reel, end to end.', body: 'Films, edits, coverage, photography and cover design — filter by category or format, or search.' },
       ],
     },
     // /tech/about
@@ -437,7 +504,7 @@ async function main() {
         headline: b.headline ?? null,
         body: b.body ?? null,
         props: b.props ?? {},
-        media: [],
+        media: b.media ?? [],
         links: b.links ?? [],
         status: 'published',
         is_sample: true,
@@ -568,7 +635,7 @@ async function main() {
     { name: 'BootStrap', category: 'frontend', level: 4, evidence: 'Legacy client migrations to modern stacks' },
     { name: 'Node.js', category: 'backend', level: 5, evidence: 'API servers, workers, CLI tooling since 2018' },
     { name: 'Express', category: 'backend', level: 5, evidence: 'REST APIs serving thousands of daily requests' },
-    { name: 'GO', category: 'backend', level: 3, evidence: 'High-throughput worker services and CLI tools' },
+    { name: 'Go', category: 'backend', level: 3, evidence: 'High-throughput worker services and CLI tools' },
     { name: 'Python', category: 'backend', level: 4, evidence: 'Data pipelines, automation scripts, FastAPI services' },
     { name: 'Java', category: 'backend', level: 3, evidence: 'Enterprise backend integrations' },
     { name: 'MongoDB', category: 'databases', level: 4, evidence: 'Document modelling and aggregation pipelines' },
@@ -583,7 +650,7 @@ async function main() {
   const catLabel: Record<string, string> = { frontend: 'Frontend', backend: 'Backend', databases: 'Databases', design: 'UI/UX', grc: 'GRC & Security' };
   for (const sk of techSkills) {
     const slug = sk.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const exists = await db.select<{ id: string }>(`SELECT id FROM skill WHERE name = $1::text AND category = $2::text`, [sk.name, sk.category]);
+    const exists = await db.select<{ id: string }>(`SELECT id FROM skill WHERE slug = $1::text`, [slug]);
     if (exists.length === 0) {
       await insertRow('skill', {
         slug,
