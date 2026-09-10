@@ -152,7 +152,9 @@ export default async function TechPortfolioPage() {
   const firstName = nameParts[0] || 'Covenant';
   const lastName = nameParts.slice(1).join(' ');
   const socials = defaultSocials();
-  const resumePdfUrl = resume?.url || '/uploads/Covenant-Nsikan-Resume.pdf';
+  // Bundled résumé PDF (public/My Resume.pdf, tracked in Git) is served statically at
+  // /My%20Resume.pdf; an active CMS résumé, when one is published, overrides it automatically.
+  const resumePdfUrl = resume?.url || '/My%20Resume.pdf';
 
   return (
     <div className="theme-tech relative flex min-h-dvh flex-col overflow-x-clip">

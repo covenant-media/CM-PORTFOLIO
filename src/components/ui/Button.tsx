@@ -96,6 +96,16 @@ export function Button({
         </a>
       );
     }
+    if (download) {
+      // next/link does not forward a `download` attribute, and a file download needs no
+      // client-side navigation — render a plain anchor so the browser downloads the file
+      // instead of navigating to it and opening it inline.
+      return (
+        <a href={href} className={classes} download={download} {...(rest as Record<string, unknown>)}>
+          {inner}
+        </a>
+      );
+    }
     return (
       <Link href={href} className={classes} target={newTab ? '_blank' : undefined} {...(rest as Record<string, unknown>)}>
         {inner}
