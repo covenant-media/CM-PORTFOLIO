@@ -61,7 +61,10 @@ Covenant Media is a **monolithic Next.js 15 App Router application** that runs b
   - `/media/long-form`, `/media/short-form`, `/media/photography`: the three format catalogs, each its own route (statically prerendered) rendering `MediaCatalogScreen` → `MediaCatalogView` → `MediaCatalogGrid`. Cats are per format so no screen mixes formats. They are intentionally not linked from the one-pager; their survival is an open decision.
   - Media-specific components: `MediaPortfolioPage`, `MediaPricingPage`, `MediaHeader`, `MediaHeroVideo` (the hero card), `MediaStats` (the studio figures), `MediaSocialButtons` (the hero social row), `MediaGalleries`, `MediaCards` (card + details card), `MediaTicker` (the loop), `MediaRoleLine`, `MediaInquiryForm`, `MediaBackToTop`, `MediaCatalogScreen/View/Grid`, `MediaVideoPlayer`.
   - Enquiry dropdowns: `MediaInquiryForm` renders the shared `PublicForm` and, once hydrated, switches it to `selects="menu"` so dropdowns are drawn by `src/components/forms/SelectMenu.tsx` (portalled listbox with keyboard support, type-ahead and flip-up placement) instead of the operating system. The native control stays in the DOM, so the form still works with JavaScript off.
-- The CMS lives under `/admin/**` with its own `theme-admin` shell and auth layout.
+- The CMS lives under `/admin/**` with its own `theme-admin` shell and auth layout. It has two layers:
+  - **The console** — hand-built screens for the jobs an owner actually repeats: `/admin` (overview), `/admin/media/{hero,videos,photography,stories,about}`, `/admin/site/{hero,services,team}`, `/admin/social`, plus `/admin/account` and `/admin/content`. They render their own forms against purpose-made server actions.
+  - **The registry** — `/admin/[module]`, `/admin/[module]/new`, `/admin/[module]/[id]`, one route for all 24 `CMS_MODULES`. Anything the console does not specialise stays here, and `/admin/content` is the index of the lot.
+  - Both layers write through `src/app/admin/actions.ts`; nothing writes to the database from a component.
 - Each public route imports `CmsPage`, which resolves content in this order:
   1. Look up `page` row by slug.
   2. If the page exists and has attached blocks, render those ordered blocks.
@@ -109,14 +112,15 @@ There is no separate backend process. All backend logic runs inside Next:
 - `src/lib/cms/`
   - `modules.ts` — `CMS_MODULES` array: one entry per admin module with table, editor, fields, list columns, filters, search, sortability, publishability, slugs, fixed scopes, permission key, public base path.
   - `fields.ts` — Field type system (text/textarea/markdown/number/money/boolean/select/multiselect/url/slug/date/datetime/image/asset/relation/tags/list/repeat/json/seo/color) with conditional `showIf`, grouping, help text, validation metadata.
-  - `repository.ts` — Create/update/delete/duplicate/reorder/setField/status operations; validates input against module fields; checks references before delete; writes `audit_log`; calls `revalidateTag`/`revalidatePath`.
+  - `repository.ts` — Create/update/delete/duplicate/reorder/setField/status operations; validates input against module fields; checks references before delete; writes `audit_log`; calls `revalidateTag`/`revalidatePath`. **Every write audits**, so a caller must not add a second entry — pass the optional `note`/`summary` instead when the generic line (`Service created`, `is_verified changed`) should say something better.
   - `content.ts` — All public read queries (site context, pages with sections, services, projects, videos, galleries, testimonials, skills, experience, certifications, resume, blog posts, pricing, contact details).
   - `page-plans.ts` — Structural fallback plans per route (list of `{type, props}` block definitions).
   - `blocks.ts` — Per-block-type prop defaults.
   - `settings.ts` — Typed getter/setter for `site_setting`; groups settings (brand, contact, legal, forms, seo, system, etc.).
   - `forms.ts` — Public contact form field configs (main/media/tech variants) shared by UI and server validation.
   - `options.ts` — Enums/select options used across admin, public renderers, and validation.
-  - `admin.ts` — FormData parser for admin forms; builds validated input objects from field defs.
+  - `admin.ts` — FormData parser for admin forms; builds validated input objects from field defs; `consoleNav()`/`adminNav()` build the console and full-registry sidebars (filtered by role), plus `recentActivity()` and `needsAttention()`.
+  - `console.ts` — Read models for the hand-built console screens: `surfaceHero`/`saveSurfaceHero`-shaped reads, `videosForConsole`, `eventPhotos`, `stories`/`storySources`, `studioAbout`, `socialProfiles`, `servicesForConsole`, `teamForConsole`, `imageAssetOptions`, `resolvePortrait`. Each tolerates a table that does not exist yet (`.catch(() => …)`) so a screen degrades to its empty state instead of a 500.
 - `src/lib/auth/`
   - `session.ts` — Session creation, verification, destruction; httpOnly session cookie + CSRF cookie; password hashing (scrypt) and verification.
   - `guard.ts` — `requireAdmin`, `requirePermission`, `assertCsrf`, `audit`, `ApiError`, JSON helpers for routes.

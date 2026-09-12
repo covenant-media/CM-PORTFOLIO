@@ -9,6 +9,16 @@ const devOrigins = (process.env.CM_ALLOWED_ORIGINS ?? '')
   .filter(Boolean);
 if (process.env.E2B_SANDBOX_ID) devOrigins.push(`3000-${process.env.E2B_SANDBOX_ID}.e2b.app`);
 
+/**
+ * Server actions are the CMS's only write path, and uploads travel through them.
+ * Next caps action request bodies at 1MB by default — far below STORAGE_MAX_UPLOAD_MB,
+ * so a real event photograph was rejected by the framework with a 500 before the
+ * upload action's own 413 could explain it. Track the storage limit, plus headroom
+ * for multipart framing and field overhead.
+ */
+const uploadLimitMb = Math.max(1, Number(process.env.STORAGE_MAX_UPLOAD_MB ?? 32));
+const actionBodyLimitMb = uploadLimitMb + 8;
+
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -80,6 +90,14 @@ const nextConfig = {
   },
   ...(devOrigins.length ? { allowedDevOrigins: Array.from(new Set(devOrigins)) } : {}),
   experimental: {
+    serverActions: {
+      bodySizeLimit: `${actionBodyLimitMb}mb`,
+    },
+    // Middleware sits in front of /admin/*, so an upload passing through it is buffered
+    // up to Next's own 10MB default before anything else sees it. Match the action limit
+    // so a large photograph is not silently truncated (and does not log a warning that
+    // has nothing to do with the request).
+    middlewareClientMaxBodySize: actionBodyLimitMb * 1024 * 1024,
     optimizePackageImports: ['framer-motion'],
     // Worth it on small machines: fewer cached modules in the dev server, at the cost
     // of slightly slower rebuilds. Turn off with CM_LOW_MEM=0.

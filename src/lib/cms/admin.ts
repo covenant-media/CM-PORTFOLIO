@@ -8,6 +8,7 @@ import { CMS_MODULES, getCmsModule, type CmsModuleDef } from './modules';
 import { levelFor, SYSTEM_ROLES, can, type ModuleKey, type PermissionLevel } from '../auth/permissions';
 import { getSettings } from './settings';
 import { BLOCK_TYPES } from './blocks';
+import type { ConsoleNavGroup, ConsoleNavItem } from '@/components/admin/ui';
 
 export interface AdminActionState {
   ok: boolean;
@@ -596,3 +597,105 @@ export async function assetUrls(ids: (string | null | undefined)[]): Promise<Rec
 }
 
 export const ROLE_OPTIONS = SYSTEM_ROLES.map((r) => ({ value: r.key, label: r.label, hint: r.description }));
+
+// ── console navigation (2026-09-12) ─────────────────────────────────────────
+
+/**
+ * The sidebar for the redesigned console.
+ *
+ * The registry is still the source of truth for what *can* be edited — this list only
+ * decides how the owner reaches it. Ordering is by surface because that is how the work
+ * is actually thought about: "the media portfolio", then "the website", then everything
+ * else. Every item carries the role's level on the module that guards it, so a reader
+ * sees a padlock instead of discovering a 403 after clicking.
+ */
+export async function consoleNav(
+  role: string,
+  roleMap?: Record<string, PermissionLevel>,
+  counts: { enquiries?: number } = {},
+): Promise<ConsoleNavGroup[]> {
+  const level = (module: ModuleKey) => levelFor(role, module, roleMap);
+  const visible = (module: ModuleKey) => can(role, module, 'read', roleMap);
+
+  const groups: ConsoleNavGroup[] = [
+    {
+      key: 'overview',
+      label: 'Overview',
+      hint: 'The whole platform at a glance',
+      items: [{ key: 'overview', label: 'Dashboard', href: '/admin', icon: 'home', level: 'manage' }],
+    },
+  ];
+
+  const media: ConsoleNavItem[] = [];
+  if (visible('media_projects')) {
+    media.push({
+      key: 'media',
+      label: 'Media portfolio',
+      href: '/admin/media',
+      icon: 'film',
+      level: level('media_projects'),
+      children: [
+        { label: 'Hero & intro text', href: '/admin/media/hero' },
+        { label: 'Video links', href: '/admin/media/videos' },
+        { label: 'Event photography', href: '/admin/media/photography' },
+        { label: 'Client stories', href: '/admin/media/stories' },
+        { label: 'About the studio', href: '/admin/media/about' },
+      ],
+    });
+  }
+  if (media.length) groups.push({ key: 'media', label: 'Media portfolio', hint: 'Films, stills and client stories', items: media });
+
+  const site: ConsoleNavItem[] = [];
+  if (visible('pages')) {
+    site.push({
+      key: 'site',
+      label: 'Main website',
+      href: '/admin/site',
+      icon: 'layout',
+      level: level('pages'),
+      children: [
+        { label: 'Hero & headline text', href: '/admin/site/hero' },
+        { label: 'Services', href: '/admin/site/services' },
+        { label: 'Team', href: '/admin/site/team' },
+      ],
+    });
+  }
+  if (site.length) groups.push({ key: 'site', label: 'Main website', hint: 'The brand house at /', items: site });
+
+  /**
+   * The tech portfolio keeps its registry modules. The console groups them here so the
+   * surface has a home in the sidebar; the screens themselves are the generic editors,
+   * which already cover projects, skills, experience, certifications and the résumé.
+   */
+  const tech: ConsoleNavItem[] = [];
+  for (const key of ['tech_projects', 'skills', 'experience', 'certifications', 'resume'] as ModuleKey[]) {
+    const mod = CMS_MODULES.find((m) => m.key === key);
+    if (mod && visible(key)) {
+      tech.push({ key, label: mod.label, href: `/admin/${key}`, icon: mod.icon, level: level(key) });
+    }
+  }
+  if (tech.length) {
+    groups.push({ key: 'tech', label: 'Tech portfolio', hint: 'Projects, skills, credentials', items: tech });
+  }
+
+  const reach: ConsoleNavItem[] = [];
+  if (visible('social_links')) {
+    reach.push({ key: 'social', label: 'Social profiles', href: '/admin/social', icon: 'share', level: level('social_links') });
+  }
+  if (visible('contact_info')) {
+    reach.push({ key: 'contact_info', label: 'Contact details', href: '/admin/contact_info', icon: 'mail', level: level('contact_info') });
+  }
+  if (visible('submissions')) {
+    reach.push({
+      key: 'submissions',
+      label: 'Enquiries',
+      href: '/admin/submissions',
+      icon: 'inbox',
+      level: level('submissions'),
+      badge: counts.enquiries ?? 0,
+    });
+  }
+  if (reach.length) groups.push({ key: 'reach', label: 'Reach', hint: 'How people find and contact you', items: reach });
+
+  return groups;
+}

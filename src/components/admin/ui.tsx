@@ -157,3 +157,130 @@ export function Meta({ items }: { items: (string | null | undefined)[] }) {
   if (!list.length) return null;
   return <span className="text-[11.5px] text-fg-dim">{list.join(' · ')}</span>;
 }
+import type { PermissionLevel } from '@/lib/auth/permissions';
+
+// ── console navigation ──────────────────────────────────────────────────────
+// The console nav is hand-ordered rather than derived from the registry: the owner
+// thinks in surfaces ("the media portfolio"), not in tables ("media_video"). Each
+// item keeps a `level` so the sidebar can show what a role is allowed to do, and a
+// `children` list so a section reads as a section instead of a flat list of links.
+
+export interface ConsoleNavChild {
+  label: string;
+  href: string;
+}
+
+export interface ConsoleNavItem {
+  key: string;
+  label: string;
+  href: string;
+  icon: string;
+  level: PermissionLevel;
+  badge?: number;
+  children?: ConsoleNavChild[];
+}
+
+export interface ConsoleNavGroup {
+  key: string;
+  label: string;
+  hint: string;
+  items: ConsoleNavItem[];
+}
+
+// ── page furniture ──────────────────────────────────────────────────────────
+
+/** The standard console page heading: eyebrow, title, lede, and an actions slot. */
+export function PageHeader({
+  eyebrow,
+  title,
+  lede,
+  actions,
+}: {
+  eyebrow?: string;
+  title: string;
+  lede?: string;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="min-w-0">
+        {eyebrow ? <p className="mb-1 text-[10.5px] uppercase tracking-[0.18em] text-fg-dim">{eyebrow}</p> : null}
+        <h2 className="font-display text-[22px] leading-tight text-fg">{title}</h2>
+        {lede ? <p className="mt-1.5 max-w-[62ch] text-[12.5px] leading-relaxed text-fg-muted">{lede}</p> : null}
+      </div>
+      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+    </header>
+  );
+}
+
+/** A dashboard figure. Big number, small label, optional link. */
+export function StatCard({
+  label,
+  value,
+  hint,
+  href,
+  tone = 'neutral',
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  href?: string;
+  tone?: 'neutral' | 'accent' | 'warn';
+}) {
+  const body = (
+    <>
+      <span
+        className={cx(
+          'block font-display text-[26px] leading-none tabular-nums',
+          tone === 'accent' ? 'text-[var(--accent)]' : tone === 'warn' ? 'text-alert-400' : 'text-fg',
+        )}
+      >
+        {value}
+      </span>
+      <span className="mt-1.5 block text-[11px] uppercase tracking-[0.14em] text-fg-dim">{label}</span>
+      {hint ? <span className="mt-1 block text-[11.5px] leading-snug text-fg-dim/80">{hint}</span> : null}
+    </>
+  );
+  const shell = 'block rounded-4 border border-line bg-ink-900/60 px-4 py-3.5 transition-colors';
+  return href ? (
+    <Link href={href} className={cx(shell, 'hover:border-[var(--accent)]/45')}>
+      {body}
+    </Link>
+  ) : (
+    <div className={shell}>{body}</div>
+  );
+}
+
+/** Used wherever a list has nothing to show yet — never a blank rectangle. */
+export function EmptyState({ title, hint, action }: { title: string; hint?: string; action?: React.ReactNode }) {
+  return (
+    <div className="rounded-4 border border-dashed border-line bg-ink-950/40 px-5 py-8 text-center">
+      <p className="text-[13px] text-fg-muted">{title}</p>
+      {hint ? <p className="mx-auto mt-1.5 max-w-[52ch] text-[12px] leading-relaxed text-fg-dim">{hint}</p> : null}
+      {action ? <div className="mt-3.5 flex justify-center">{action}</div> : null}
+    </div>
+  );
+}
+
+/** A short label above a control group, for dividing a long form. */
+export function FormSection({
+  title,
+  hint,
+  children,
+  className,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={cx('rounded-4 border border-line bg-ink-900/60', className)}>
+      <header className="border-b border-line px-5 py-3">
+        <h3 className="text-[12.5px] font-medium tracking-wide text-fg">{title}</h3>
+        {hint ? <p className="mt-0.5 text-[11.5px] leading-snug text-fg-dim">{hint}</p> : null}
+      </header>
+      <div className="space-y-4 px-5 py-4">{children}</div>
+    </section>
+  );
+}

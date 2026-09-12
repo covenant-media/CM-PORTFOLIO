@@ -567,3 +567,68 @@ CREATE TABLE IF NOT EXISTS cm_event (
 );
 CREATE INDEX IF NOT EXISTS idx_event_created ON cm_event(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_event_name ON cm_event(name, created_at DESC);
+
+-- ══ CMS console pages (2026-09-12) ═══════════════════════════════════════════
+-- Purpose-built tables behind the redesigned CMS console. They are additive and
+-- idempotent: an existing database picks them up on the next request, and nothing
+-- here alters a table the public surfaces already read.
+
+-- The hero/intro copy of one public surface, edited from the console instead of
+-- from code. One row per surface, so adding a surface later is a row, not a table.
+CREATE TABLE IF NOT EXISTS surface_hero (
+  id             TEXT PRIMARY KEY,
+  surface        TEXT NOT NULL,              -- media | main | tech
+  eyebrow        TEXT,                       -- the mono line above the name
+  name_given     TEXT,                       -- rendered in the accent
+  name_family    TEXT,                       -- rendered in the surface white
+  roles          JSONB NOT NULL DEFAULT '[]'::jsonb,   -- the rolling role line
+  intro          TEXT,                       -- the paragraph under the name
+  capabilities   JSONB NOT NULL DEFAULT '[]'::jsonb,   -- one per line in the console
+  primary_label  TEXT,
+  primary_href   TEXT,
+  secondary_label TEXT,
+  secondary_href TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_surface_hero_surface ON surface_hero(surface);
+
+-- "About the studio" block: the portrait and the biography that sits under it.
+CREATE TABLE IF NOT EXISTS studio_about (
+  id                TEXT PRIMARY KEY,
+  surface           TEXT NOT NULL,              -- media | main | tech
+  heading           TEXT,                       -- "About the Studio"
+  subheading        TEXT,                       -- "The FACE Behind the Brand"
+  bio               TEXT,                       -- the biography, under the portrait
+  portrait_asset_id TEXT REFERENCES media_asset(id) ON DELETE SET NULL,
+  portrait_url      TEXT,                       -- plain URL when no asset is chosen
+  credit_name       TEXT,                       -- the name inside the frame
+  credit_role       TEXT,                       -- "Founder / CEO, Covenant Media"
+  statement         TEXT,                       -- "WE CAPTURE. WE CREATE. WE INSPIRE."
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_studio_about_surface ON studio_about(surface);
+
+-- Client stories. A story belongs to one video; when the client name is left
+-- blank the console fills it from the video's own title and description.
+CREATE TABLE IF NOT EXISTS media_testimonial (
+  id           TEXT PRIMARY KEY,
+  video_id     TEXT REFERENCES media_video(id) ON DELETE SET NULL,
+  client_name  TEXT,                           -- blank = derived from the video
+  video_type   TEXT,                           -- wedding | campaign | photoshoot | event | documentary | music | celebration | other
+  quote        TEXT,
+  role_label   TEXT,                           -- "Wedding client", shown under the name
+  origin       TEXT NOT NULL DEFAULT 'manual', -- manual | auto
+  status       TEXT NOT NULL DEFAULT 'draft',  -- draft | published | archived
+  sort_order   INTEGER NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_media_testimonial_video ON media_testimonial(video_id);
+CREATE INDEX IF NOT EXISTS idx_media_testimonial_status ON media_testimonial(status, sort_order);
+
+-- Which short-form pieces open the hero reel. Additive: existing video rows keep
+-- working and simply default to false.
+ALTER TABLE media_video ADD COLUMN IF NOT EXISTS hero_preview BOOLEAN NOT NULL DEFAULT FALSE;
+CREATE INDEX IF NOT EXISTS idx_video_hero_preview ON media_video(hero_preview) WHERE hero_preview = TRUE;

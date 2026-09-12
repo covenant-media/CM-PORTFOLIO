@@ -14,17 +14,36 @@ import { CMS_MODULES } from '../src/lib/cms/modules';
 const schemaPath = join(import.meta.dirname, '../src/lib/db/schema.sql');
 const sql = readFileSync(schemaPath, 'utf8');
 
-/** CREATE TABLE bodies keyed by table name, with the column names and their SQL types. */
+const COLUMN_LINE = /^\s*"?([a-z_]+)"?\s+(TEXT|INTEGER|BIGINT|NUMERIC|BOOLEAN|DATE|TIMESTAMPTZ|JSONB|TSVECTOR)\b/i;
+
+/**
+ * CREATE TABLE bodies keyed by table name, with the column names and their SQL types.
+ *
+ * `ALTER TABLE … ADD COLUMN` counts too. A table that already exists in a deployed
+ * database is never re-created — CREATE TABLE IF NOT EXISTS is a no-op there — so adding
+ * a column to a live table is *only* expressible as an ALTER. Reading those here is what
+ * keeps this test honest: without it, an additive column is invisible to a check whose
+ * whole job is noticing that schema.sql and tables.ts disagree.
+ */
 function tablesInSql(): Map<string, Map<string, string>> {
   const out = new Map<string, Map<string, string>>();
+  const table = (name: string) => {
+    if (!out.has(name)) out.set(name, new Map<string, string>());
+    return out.get(name)!;
+  };
+
   for (const match of sql.matchAll(/CREATE TABLE IF NOT EXISTS (\w+) \(([\s\S]*?)\n\);/g)) {
-    const columns = new Map<string, string>();
+    const columns = table(match[1]);
     for (const line of match[2].split('\n')) {
-      const column = /^\s*"?([a-z_]+)"?\s+(TEXT|INTEGER|BIGINT|NUMERIC|BOOLEAN|DATE|TIMESTAMPTZ|JSONB|TSVECTOR)\b/i.exec(line);
+      const column = COLUMN_LINE.exec(line);
       if (column) columns.set(column[1], column[2].toUpperCase());
     }
-    out.set(match[1], columns);
   }
+
+  for (const match of sql.matchAll(/ALTER TABLE\s+(\w+)\s+ADD COLUMN\s+(?:IF NOT EXISTS\s+)?(\w+)\s+(\w+)/gi)) {
+    table(match[1]).set(match[2], match[3].toUpperCase());
+  }
+
   return out;
 }
 

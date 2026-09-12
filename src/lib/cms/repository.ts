@@ -185,7 +185,20 @@ async function uniqueSlug(module: CmsModuleDef, slugField: string, desired: stri
   return `${desired}-${newId('x').slice(4, 8)}`;
 }
 
-export async function create(moduleKey: string, input: Record<string, unknown>, ctx: { user: { id: string } }): Promise<Record<string, unknown>> {
+/**
+ * Optional override for the audit line a repository write records.
+ *
+ * `create`/`update`/`setStatus`/`setField`/`remove` each write their own audit entry —
+ * that is the engine's contract, and the console must not add a second row per click.
+ * The generic summaries ("Service created", "is_verified changed") are accurate but
+ * thin, so a caller that knows *why* the write happened can say so here. Omitted, the
+ * text is exactly what it was before.
+ */
+export interface RepoAuditNote {
+  summary?: string;
+}
+
+export async function create(moduleKey: string, input: Record<string, unknown>, ctx: { user: { id: string } }, note?: RepoAuditNote): Promise<Record<string, unknown>> {
   const module = moduleDef(moduleKey);
   const fields = dbFields(module);
   const merged: Record<string, unknown> = { ...input, ...(module.fixed ?? {}) };
@@ -212,7 +225,7 @@ export async function create(moduleKey: string, input: Record<string, unknown>, 
 
   const row = await insertRow(module.table, serialiseJsonb(module, value));
   const id = String(row[TABLES[module.table].pk] ?? '');
-  await audit(ctx, { action: 'create', module: moduleKey, entity: module.table, entityId: id, summary: `${module.singular} created` });
+  await audit(ctx, { action: 'create', module: moduleKey, entity: module.table, entityId: id, summary: note?.summary || `${module.singular} created` });
   await revalidateContent(moduleKey, id, 'create');
   return hydrate(module, row);
 }
@@ -224,7 +237,7 @@ export async function read(moduleKey: string, id: string): Promise<Record<string
   return hydrate(module, row);
 }
 
-export async function update(moduleKey: string, id: string, input: Record<string, unknown>, ctx: { user: { id: string } }): Promise<Record<string, unknown>> {
+export async function update(moduleKey: string, id: string, input: Record<string, unknown>, ctx: { user: { id: string } }, note?: RepoAuditNote): Promise<Record<string, unknown>> {
   const module = moduleDef(moduleKey);
   const spec = TABLES[module.table];
   const existing = await getById(module.table, id);
@@ -254,12 +267,12 @@ export async function update(moduleKey: string, id: string, input: Record<string
   }
 
   const row = await updateRow(module.table, id, serialiseJsonb(module, value));
-  await audit(ctx, { action: 'update', module: moduleKey, entity: module.table, entityId: id, summary: `${module.singular} updated`, meta: { fields: Object.keys(value) } });
+  await audit(ctx, { action: 'update', module: moduleKey, entity: module.table, entityId: id, summary: note?.summary || `${module.singular} updated`, meta: { fields: Object.keys(value) } });
   await revalidateContent(moduleKey, id, 'update');
   return hydrate(module, row ?? existing);
 }
 
-export async function remove(moduleKey: string, id: string, ctx: { user: { id: string } }, opts: { force?: boolean } = {}): Promise<void> {
+export async function remove(moduleKey: string, id: string, ctx: { user: { id: string } }, opts: { force?: boolean; summary?: string } = {}): Promise<void> {
   const module = moduleDef(moduleKey);
   const existing = await getById(module.table, id);
   if (!existing) throw new ApiError(404, `No ${module.singular.toLowerCase()} with that id`);
@@ -294,11 +307,11 @@ export async function remove(moduleKey: string, id: string, ctx: { user: { id: s
   }
 
   await dbDelete(module.table, id);
-  await audit(ctx, { action: 'delete', module: moduleKey, entity: module.table, entityId: id, summary: `${module.singular} deleted` });
+  await audit(ctx, { action: 'delete', module: moduleKey, entity: module.table, entityId: id, summary: opts.summary || `${module.singular} deleted` });
   await revalidateContent(moduleKey, id, 'delete');
 }
 
-export async function setStatus(moduleKey: string, id: string, status: string, ctx: { user: { id: string } }): Promise<Record<string, unknown>> {
+export async function setStatus(moduleKey: string, id: string, status: string, ctx: { user: { id: string } }, note?: RepoAuditNote): Promise<Record<string, unknown>> {
   const module = moduleDef(moduleKey);
   const spec = TABLES[module.table];
   if (!('status' in spec.columns)) throw new ApiError(400, `${module.singular} has no publishing state`);
@@ -309,12 +322,12 @@ export async function setStatus(moduleKey: string, id: string, status: string, c
   }
   if ('is_visible' in spec.columns) patch.is_visible = status === 'published';
   const row = await updateRow(module.table, id, patch);
-  await audit(ctx, { action: status === 'published' ? 'publish' : 'unpublish', module: moduleKey, entity: module.table, entityId: id, summary: `${module.singular} set to ${status}` });
+  await audit(ctx, { action: status === 'published' ? 'publish' : 'unpublish', module: moduleKey, entity: module.table, entityId: id, summary: note?.summary || `${module.singular} set to ${status}` });
   await revalidateContent(moduleKey, id, 'update');
   return hydrate(module, row ?? {});
 }
 
-export async function setField(moduleKey: string, id: string, key: string, value: unknown, ctx: { user: { id: string } }): Promise<Record<string, unknown>> {
+export async function setField(moduleKey: string, id: string, key: string, value: unknown, ctx: { user: { id: string } }, note?: RepoAuditNote): Promise<Record<string, unknown>> {
   const module = moduleDef(moduleKey);
   const spec = TABLES[module.table];
   if (!(key in spec.columns)) throw new ApiError(400, `Unknown field: ${key}`);
@@ -327,7 +340,7 @@ export async function setField(moduleKey: string, id: string, key: string, value
   const cast = (spec.columns as Record<string, { type: string }>)[key];
   const patch = cast?.type === 'jsonb' ? { [key]: JSON.stringify(finalValue ?? {}) } : { [key]: finalValue };
   const row = await updateRow(module.table, id, patch as Record<string, unknown>);
-  await audit(ctx, { action: 'update', module: moduleKey, entity: module.table, entityId: id, summary: `${key} changed` });
+  await audit(ctx, { action: 'update', module: moduleKey, entity: module.table, entityId: id, summary: note?.summary || `${key} changed` });
   await revalidateContent(moduleKey, id, 'update');
   return hydrate(module, row ?? {});
 }

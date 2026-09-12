@@ -36,8 +36,9 @@ export function middleware(req: NextRequest) {
   return NextResponse.redirect(url, 302);
 }
 
-// Module keys — keep in sync with src/lib/cms/modules.ts. If you add a CMS
-// module, add its key here so the middleware does not redirect its URL.
+// Module keys and console section keys. Keep in sync with src/lib/cms/modules.ts and
+// the console groups in src/lib/cms/admin.ts — if you add either, add its key here or
+// the middleware will bounce its URL back to /admin.
 const MODULE_KEYS = new Set([
   'pages',
   'blocks',
@@ -64,6 +65,12 @@ const MODULE_KEYS = new Set([
   'submissions',
   'featured',
   'account',
+  // Console sections — these are hand-composed screens, not registry modules, but they
+  // live at /admin/<section>/<page> and so need the same pass-through.
+  'media',
+  'site',
+  'social',
+  'content',
 ]);
 
 export const config = {

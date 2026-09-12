@@ -256,6 +256,9 @@ const tableDefs = {
       metadata_state: t(),
       metadata: j(),
       external_url: t(),
+      // Which short-form pieces open the hero reel. Untoggled pieces stay in the
+      // short-form rail and the catalog.
+      hero_preview: b(),
       is_featured: b(),
       is_sample: b(),
       status: t(),
@@ -510,6 +513,63 @@ const tableDefs = {
       structured_type: t(),
       extra: j(),
       updated_at: { type: 'timestamptz', writable: false, nullable: true },
+    },
+  },
+  /**
+   * CMS console pages. These are edited by the purpose-built screens under
+   * /admin/media/** and /admin/site/**, not by the generic module dispatcher, so
+   * the write-allowlist here is exactly what those screens post.
+   */
+  surface_hero: {
+    table: 'surface_hero',
+    pk: 'id',
+    idPrefix: 'hr',
+    timestamps: true,
+    columns: {
+      surface: t({ nullable: false }),
+      eyebrow: t(),
+      name_given: t(),
+      name_family: t(),
+      roles: j(),
+      intro: t(),
+      capabilities: j(),
+      primary_label: t(),
+      primary_href: t(),
+      secondary_label: t(),
+      secondary_href: t(),
+    },
+  },
+  studio_about: {
+    table: 'studio_about',
+    pk: 'id',
+    idPrefix: 'abt',
+    timestamps: true,
+    columns: {
+      surface: t({ nullable: false }),
+      heading: t(),
+      subheading: t(),
+      bio: t(),
+      portrait_asset_id: t(),
+      portrait_url: t(),
+      credit_name: t(),
+      credit_role: t(),
+      statement: t(),
+    },
+  },
+  media_testimonial: {
+    table: 'media_testimonial',
+    pk: 'id',
+    idPrefix: 'mts',
+    timestamps: true,
+    columns: {
+      video_id: t(),
+      client_name: t(),
+      video_type: t(),
+      quote: t(),
+      role_label: t(),
+      origin: t({ nullable: false }),
+      status: t({ nullable: false }),
+      sort_order: n({ nullable: false }),
     },
   },
   admin_user: {
