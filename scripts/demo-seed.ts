@@ -111,6 +111,9 @@ async function main() {
       { id: 'ast_demo_avatar1', seed: 'avatar-chi', w: 400, h: 400, alt: 'Client avatar (sample)' },
       { id: 'ast_demo_avatar2', seed: 'avatar-ama', w: 400, h: 400, alt: 'Client avatar (sample)' },
       { id: 'ast_demo_avatar3', seed: 'avatar-tunde', w: 400, h: 400, alt: 'Client avatar (sample)' },
+      { id: 'ast_demo_thumb1', seed: 'cover-bold', w: 1280, h: 720, alt: 'Designed thumbnail cover (sample)', folder: 'covers' },
+      { id: 'ast_demo_thumb2', seed: 'cover-series', w: 1280, h: 720, alt: 'Designed series cover (sample)', folder: 'covers' },
+      { id: 'ast_demo_thumb3', seed: 'cover-product', w: 1280, h: 720, alt: 'Designed product cover (sample)', folder: 'covers' },
     ];
     for (const a of demoAssets) {
       await asset({
@@ -452,6 +455,33 @@ async function main() {
       gallery: ['ast_demo_system', 'ast_demo_ops'],
       accent: '#7fa7ff',
     },
+    {
+      slug: 'sample-thumbnail-set',
+      cover: 'ast_demo_thumb1',
+      client: 'Sample Channel',
+      outcomes: ['Twelve covers delivered with an editable template'],
+      metrics: [],
+      gallery: ['ast_demo_thumb1'],
+      accent: '#d8a24a',
+    },
+    {
+      slug: 'sample-sermon-covers',
+      cover: 'ast_demo_thumb2',
+      client: 'Sample Church Media',
+      outcomes: ['Series title cards plus a matching social cover set'],
+      metrics: [],
+      gallery: ['ast_demo_thumb2'],
+      accent: '#d8a24a',
+    },
+    {
+      slug: 'sample-launch-covers',
+      cover: 'ast_demo_thumb3',
+      client: 'Sample Brand Store',
+      outcomes: ['Hero covers with vertical ad variants'],
+      metrics: [],
+      gallery: ['ast_demo_thumb3'],
+      accent: '#d8a24a',
+    },
   ];
   for (const fix of projectFixups) {
     const ids = fix.gallery.map((assetId) => ({ asset_id: assetId, caption: null, alt: null }));
@@ -479,7 +509,7 @@ async function main() {
 
   // attach hero videos to first three media projects
   const videos = await db.select<{ id: string }>(`SELECT id FROM media_video WHERE is_sample = true ORDER BY sort_order ASC LIMIT 4`);
-  const mediaProjects = await db.select<{ id: string }>(`SELECT id FROM project WHERE division = 'media' AND is_sample = true ORDER BY sort_order ASC LIMIT 4`);
+  const mediaProjects = await db.select<{ id: string }>(`SELECT id FROM project WHERE division = 'media' AND is_sample = true AND category <> 'thumbnail_design' ORDER BY sort_order ASC LIMIT 3`);
   for (let i = 0; i < Math.min(videos.length, mediaProjects.length); i++) {
     await db.execute(`UPDATE media_video SET project_id = $1::text WHERE id = $2::text`, [mediaProjects[i]!.id, videos[i]!.id]);
   }

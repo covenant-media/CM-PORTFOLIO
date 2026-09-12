@@ -76,22 +76,26 @@ export const PAGE_PLANS: Record<string, PlanStep[]> = {
   // ── media portfolio ──────────────────────────────────────────────────────
   media: [
     { type: 'hero_media' },
-    { type: 'video_wall', props: { layout: 'wall', limit: 6 } },
-    { type: 'project_grid', props: { division: 'media', limit: 6, layout: 'mosaic', ctaLabel: 'All work', ctaHref: '/media/work' } },
-    { type: 'two_worlds', props: {} },
-    { type: 'service_grid', props: { division: 'media', limit: 6 } },
-    { type: 'photo_strip', props: { layout: 'strip' } },
-    { type: 'stats_band', props: { autoCounts: true } },
+    { type: 'featured_work', props: { limit: 4 } },
+    { type: 'short_form_rail', props: { limit: 8 } },
+    { type: 'thumbnail_wall', props: { limit: 3 } },
+    { type: 'photo_gallery', props: { limit: 8 } },
+    { type: 'service_grid', props: { division: 'media', limit: 6, layout: 'list' } },
+    { type: 'process_timeline', props: { layout: 'numbered' } },
+    { type: 'about_split', props: {} },
     { type: 'testimonial_wall', props: { division: 'media', limit: 3 } },
     { type: 'contact_block', props: { variant: 'media' } },
   ],
-  'media/work': [{ type: 'project_grid', props: { division: 'media', limit: 12 } }],
+  // The route renders the filterable ProjectCatalog itself; a project_grid here
+  // would duplicate it (and ignore the active filters), like /blog's empty plan.
+  'media/work': [],
   'media/work/[slug]': [
     { type: 'project_grid', props: { division: 'media', limit: 3, layout: 'grid', ctaLabel: 'More work', ctaHref: '/media/work' } },
   ],
   'media/services': [
     { type: 'service_grid', props: { division: 'media', limit: 12 } },
     { type: 'process_timeline', props: {} },
+    { type: 'tools_grid', props: { layout: 'grid', source: 'services' } },
     { type: 'contact_block', props: { variant: 'media' } },
   ],
   'media/about': [

@@ -61,10 +61,11 @@ test('every planned section exists in the catalogue and renders', () => {
     assert.ok(handled.has(block.type) || SHELL_OWNED.has(block.type), `no renderer for "${block.type}"`);
   }
   for (const [slug, steps] of Object.entries(PAGE_PLANS)) {
-    // /blog is the one page that queries posts directly instead of assembling sections, so an
-    // empty plan there is correct — anywhere else it would mean a page that renders nothing.
+    // /blog and /media/work render their own catalogs directly instead of assembling
+    // sections, so an empty plan there is correct — anywhere else it would mean a page
+    // that renders nothing.
     if (!steps.length) {
-      assert.equal(slug, 'blog', `${slug}: an empty plan leaves the page blank`);
+      assert.ok(slug === 'blog' || slug === 'media/work', `${slug}: an empty plan leaves the page blank`);
       continue;
     }
     for (const step of steps) {

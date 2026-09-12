@@ -124,7 +124,13 @@ export function LightboxHost() {
         </div>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-3 pb-6 md:px-8">
+      <div
+        className="relative flex min-h-0 flex-1 items-center justify-center px-3 pb-6 md:px-8"
+        // Clicking the dimmed area around the media closes the viewer; the player itself never does.
+        onClick={(event) => {
+          if (event.target === event.currentTarget) setState(null);
+        }}
+      >
         {multi ? (
           <button
             onClick={() => setState((s) => (s ? { ...s, index: (s.index - 1 + s.items.length) % s.items.length } : s))}
