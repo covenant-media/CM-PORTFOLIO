@@ -27,6 +27,20 @@ export interface LightboxItem {
   title?: string | null;
   caption?: string | null;
   meta?: string | null;
+  /**
+   * Intrinsic pixel size of the image, when it is known. The Media Portfolio records this for
+   * its photography, which is what lets the viewer show a portrait tall and a landscape wide
+   * without cropping either; other surfaces omit it and keep the previous framing.
+   */
+  width?: number | null;
+  height?: number | null;
+  /**
+   * Set by the Media Portfolio's photography wall. Opting in swaps the viewer for the media
+   * presentation: a fully opaque backdrop (the previous one was translucent and blurred, which
+   * put a dark, soft copy of the photograph behind the photograph) and a frame that follows the
+   * image's own proportions.
+   */
+  mediaGallery?: boolean;
 }
 
 interface LightboxState {
@@ -82,10 +96,17 @@ export function LightboxHost() {
   if (!state?.items?.length) return null;
   const item = state.items[state.index] ?? state.items[0]!;
   const multi = state.items.length > 1;
+  const gallery = Boolean(item.mediaGallery);
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[999] flex flex-col bg-[rgba(4,4,6,.94)] backdrop-blur-xl"
+      className={cx(
+        'fixed inset-0 z-[999] flex flex-col',
+        // Media photography: an opaque stage, so nothing behind the viewer can read as a second
+        // copy of the picture being shown. Everything else keeps the original translucent,
+        // blurred backdrop it was designed around.
+        gallery ? 'bg-[color:var(--color-ink-1000)]' : 'bg-[rgba(4,4,6,.94)] backdrop-blur-xl',
+      )}
       role="dialog"
       aria-modal="true"
       aria-label={item.title ? `Media viewer — ${item.title}` : 'Media viewer'}
@@ -128,7 +149,10 @@ export function LightboxHost() {
         {multi ? (
           <button
             onClick={() => setState((s) => (s ? { ...s, index: (s.index - 1 + s.items.length) % s.items.length } : s))}
-            className="absolute left-1 z-10 hidden size-11 place-items-center rounded-full border border-[rgba(243,241,236,.14)] bg-[rgba(10,10,13,.6)] text-fg transition hover:bg-[rgba(10,10,13,.9)] md:grid"
+            className={cx(
+              'absolute left-1 z-10 size-11 place-items-center rounded-full border border-[rgba(243,241,236,.14)] bg-[rgba(10,10,13,.6)] text-fg transition hover:bg-[rgba(10,10,13,.9)]',
+              gallery ? 'grid' : 'hidden md:grid',
+            )}
             aria-label="Previous"
           >
             <Icon name="arrow-left" size={18} />
@@ -137,17 +161,22 @@ export function LightboxHost() {
         <div className="relative mx-auto w-full max-w-[min(1180px,94vw)]">
           {item.kind === 'video' && item.video ? (
             <VideoPlayer video={item.video} active autoPlay soundOn />
+          ) : item.src && gallery ? (
+            <MediaPhotoStage src={item.src} alt={item.alt ?? item.title ?? ''} width={item.width ?? null} height={item.height ?? null} />
           ) : item.src ? (
             <div className="relative mx-auto aspect-[4/3] max-h-[74vh] w-full">
               <Image src={item.src} alt={item.alt ?? item.title ?? ''} fill sizes="94vw" className="rounded-3 object-contain" priority unoptimized={plainSrc(item.src)} />
             </div>
           ) : null}
-          {item.caption ? <p className="mt-3 text-center text-sm text-fg-muted">{item.caption}</p> : null}
+          {item.caption ? <p className={cx('mt-4 text-center text-sm text-fg-muted', gallery && 'font-display text-[0.9375rem] tracking-[-0.01em] text-fg/90')}>{item.caption}</p> : null}
         </div>
         {multi ? (
           <button
             onClick={() => setState((s) => (s ? { ...s, index: (s.index + 1) % s.items.length } : s))}
-            className="absolute right-1 z-10 hidden size-11 place-items-center rounded-full border border-[rgba(243,241,236,.14)] bg-[rgba(10,10,13,.6)] text-fg transition hover:bg-[rgba(10,10,13,.9)] md:grid"
+            className={cx(
+              'absolute right-1 z-10 size-11 place-items-center rounded-full border border-[rgba(243,241,236,.14)] bg-[rgba(10,10,13,.6)] text-fg transition hover:bg-[rgba(10,10,13,.9)]',
+              gallery ? 'grid' : 'hidden md:grid',
+            )}
             aria-label="Next"
           >
             <Icon name="arrow-right" size={18} />
@@ -156,6 +185,43 @@ export function LightboxHost() {
       </div>
     </div>,
     document.body,
+  );
+}
+
+/**
+ * A photograph, at its own proportions.
+ *
+ * The frame takes the image's intrinsic ratio from the file's own measurements, so a portrait
+ * is shown as a comfortable vertical card and a landscape fills the width it is given, both at
+ * `object-contain` on an element that is already the right shape — nothing is stretched, and
+ * nothing is cropped to fit a box that was chosen for a different picture.
+ */
+function MediaPhotoStage({ src, alt, width, height }: { src: string; alt: string; width: number | null; height: number | null }) {
+  const ratio = width && height ? width / height : null;
+  const portrait = ratio !== null && ratio < 1;
+  const sized = `mx-auto w-auto max-w-full object-contain ${portrait ? 'max-h-[74vh] sm:max-h-[76vh]' : 'max-h-[68vh] sm:max-h-[74vh]'}`;
+
+  return (
+    <figure className={cx('mx-auto flex w-full justify-center', portrait && 'max-w-[min(30rem,86vw)]')}>
+      <div className={cx('relative overflow-hidden rounded-4 border border-[rgba(243,241,236,.14)] bg-[color:var(--color-ink-950)] p-1.5 shadow-[0_50px_120px_-50px_rgba(0,0,0,1)]', portrait ? 'w-auto' : 'w-full')}>
+        {ratio ? (
+          <Image
+            src={src}
+            alt={alt}
+            width={width ?? undefined}
+            height={height ?? undefined}
+            sizes={portrait ? '(max-width: 640px) 86vw, 30rem' : '94vw'}
+            priority
+            unoptimized={plainSrc(src)}
+            className={cx('rounded-3', sized)}
+          />
+        ) : (
+          <div className="relative aspect-[4/3] max-h-[74vh] w-full">
+            <Image src={src} alt={alt} fill sizes="94vw" className="rounded-3 object-contain" priority unoptimized={plainSrc(src)} />
+          </div>
+        )}
+      </div>
+    </figure>
   );
 }
 

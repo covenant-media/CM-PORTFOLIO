@@ -145,7 +145,11 @@ export default async function TechPortfolioPage() {
     projectCards({ division: 'tech', limit: 6 }),
     activeResume().catch(() => null as ResumeInfo | null),
   ]);
-  const projects = projectResult.cards;
+  // Placeholder rows never render as portfolio work: seeded/sample case studies stay
+  // hidden and the "Portfolio coming soon" panel shows instead. The CMS clears
+  // `is_sample` the moment a real project is added, so the real cards — and the grid
+  // around them — start appearing on their own, with no code change.
+  const projects = projectResult.cards.filter((p) => !p.isSample);
   const cmsName = String(ctx.settings['founder.name'] ?? '').trim();
   const name = cmsName && cmsName !== 'Abraham James' ? cmsName : NAME;
   const nameParts = name.trim().split(' ');

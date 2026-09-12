@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cx } from '@/lib/utils/text';
 import { Icon } from '@/components/ui/Icon';
 import { Wordmark, CovenantMark } from './Logo';
+import { MediaSocialButtons } from './MediaSocialButtons';
 import type { NavItem, SocialItem } from '@/lib/types/content';
 
 export interface FooterProps {
@@ -9,6 +10,8 @@ export interface FooterProps {
   wordmark: { primary: string; secondary?: string | null };
   nav: NavItem[];
   socials: SocialItem[];
+  /** The studio paragraph under the brand. Media only; the other surfaces carry their own copy. */
+  description?: string | null;
   contact: { email: string | null; phone: string | null; whatsappHref: string | null; whatsappLabel: string | null; location: string | null; responseTime: string | null };
   cta: { headline: string; body: string | null; primary: { label: string; href: string } };
   legal: { privacyHref: string; termsHref: string; brandLine: string; tagline?: string | null };
@@ -31,9 +34,126 @@ const NETWORK_ICON: Record<string, string> = {
   phone: 'phone',
 };
 
-export function SiteFooter({ surface, wordmark, nav, socials, contact, cta, legal }: FooterProps) {
+export function SiteFooter({ surface, wordmark, nav, socials, description, contact, cta, legal }: FooterProps) {
   const year = new Date().getFullYear();
   const columns = chunkNav(nav);
+
+  /**
+   * The media footer follows the tech footer's arrangement, which is the one the owner asked
+   * for: brand and socials, a services list, and a "Stay in Touch" column holding the direct
+   * details, the newsletter and the call to action. It is deliberately the same shape as
+   * `TechFooter` — the two surfaces are siblings — while each keeps its own accent and wordmark.
+   */
+  if (surface === 'media') {
+    return (
+      <footer className="relative isolate mt-px border-t border-[rgba(243,241,236,.09)] bg-[var(--color-ink-1000)]">
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)]/40 to-transparent" />
+
+        <div className="container-page py-12 md:py-16">
+          <div className="grid gap-10 md:grid-cols-12 md:gap-8">
+            {/* Brand */}
+            <div className="md:col-span-4">
+              <div className="flex items-center gap-3">
+                <Wordmark {...wordmark} size="sm" showMark={false} />
+              </div>
+              {/* The studio in a paragraph, then the same social row the header carries. Both sit
+                  in this column, so the Services list and Stay in Touch do not move. */}
+              <p className="mt-4 max-w-[26rem] text-[0.9375rem] leading-relaxed text-fg-muted">{description ?? cta.body ?? legal.tagline ?? ''}</p>
+              <MediaSocialButtons socials={socials} className="mt-6 justify-start" />
+            </div>
+
+            {/* Services */}
+            <div className="md:col-span-3">
+              <p className="eyebrow">Services</p>
+              <ul className="mt-4 space-y-2.5">
+                {SERVICES.map((item) => (
+                  <li key={item.label}>
+                    <Link href={item.href} className="text-[0.9375rem] text-fg-muted transition hover:text-fg">
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/media#services" className="mt-4 inline-flex items-center gap-1.5 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-[var(--accent)] transition hover:brightness-110">
+                All Services <Icon name="arrow-right" size={11} />
+              </Link>
+            </div>
+
+            {/* Stay in Touch */}
+            <div className="md:col-span-5">
+              <p className="eyebrow">Stay in Touch</p>
+              <ul className="mt-4 space-y-2.5 text-[0.9375rem]">
+                {contact.phone ? (
+                  <li>
+                    <a href={`tel:${contact.phone.replace(/[^\d+]/g, '')}`} className="text-fg-muted transition hover:text-fg">
+                      {contact.phone}
+                    </a>
+                  </li>
+                ) : null}
+                {contact.email ? (
+                  <li>
+                    <a href={`mailto:${contact.email}`} className="text-fg-muted transition hover:text-fg">
+                      {contact.email}
+                    </a>
+                  </li>
+                ) : null}
+                {contact.location ? <li className="text-fg-muted">{contact.location}</li> : null}
+                {contact.responseTime ? <li className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-fg-dim">{contact.responseTime}</li> : null}
+              </ul>
+
+              <form action="#" method="post" className="mt-5">
+                <label htmlFor="media-nl" className="eyebrow block">
+                  Newsletter
+                </label>
+                <p className="mt-1 text-[0.8125rem] text-fg-dim">Subscribe for insights and updates.</p>
+                <div className="mt-3 flex overflow-hidden rounded-pill border border-[rgba(243,241,236,.14)] bg-[rgba(243,241,236,.03)] p-1 transition focus-within:border-[var(--accent)]/50">
+                  <input
+                    id="media-nl"
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="Your email"
+                    aria-label="Email for newsletter"
+                    className="min-w-0 flex-1 bg-transparent px-3 py-1.5 text-[0.8rem] text-fg placeholder:text-fg-dim focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="shrink-0 rounded-pill bg-[var(--accent)] px-3 py-1.5 text-[0.7rem] font-medium uppercase tracking-[0.1em] text-[var(--accent-ink)] transition hover:brightness-105"
+                  >
+                    Subscribe
+                  </button>
+                </div>
+              </form>
+
+              <Link
+                href={cta.primary.href}
+                className="mt-5 inline-flex items-center gap-2 rounded-pill border border-[var(--accent)]/25 px-4 py-2 text-[0.8rem] font-medium text-[var(--accent)] transition hover:bg-[var(--accent)]/10"
+              >
+                {cta.primary.label} <Icon name="arrow-right" size={12} />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* The room's own line: the copyright in full and the studio's promise, with no legal
+            links beside them (the policy pages stay reachable from the rest of the site). */}
+        <div className="container-page flex flex-col gap-3 border-t border-[rgba(243,241,236,.07)] py-5 text-[0.8125rem] text-fg-dim md:flex-row md:items-center md:justify-between">
+          <p>© {year} {legal.brandLine}. All rights reserved. Designed &amp; Built with precision.</p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            {legal.tagline ? <span className="font-mono uppercase tracking-[0.16em]">{legal.tagline}</span> : null}
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 rounded-pill border border-[rgba(243,241,236,.1)] px-2.5 py-1 transition hover:border-[rgba(243,241,236,.24)] hover:text-fg-muted"
+              aria-label="Covenant CMS sign in"
+            >
+              <Icon name="lock" size={12} /> CMS
+            </Link>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
   return (
     <footer className="relative isolate mt-px border-t border-[rgba(243,241,236,.09)] bg-[var(--color-ink-1000)]">
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)]/40 to-transparent" />
@@ -128,25 +248,7 @@ export function SiteFooter({ surface, wordmark, nav, socials, contact, cta, lega
             <div>
               <p className="eyebrow">Newsletter</p>
               <p className="mt-4 text-[0.875rem] text-fg-muted">Subscribe for insights and updates.</p>
-              <form
-                action="#"
-                method="post"
-                className="mt-3 flex overflow-hidden rounded-pill border border-[rgba(243,241,236,.14)] bg-[rgba(243,241,236,.03)] p-1 transition focus-within:border-[var(--accent)]/45"
-              >
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Your email"
-                  aria-label="Email for newsletter"
-                  className="min-w-0 flex-1 bg-transparent px-3 py-1.5 text-[0.8rem] text-fg placeholder:text-fg-dim focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="shrink-0 rounded-pill bg-[var(--accent)] px-3 py-1.5 text-[0.72rem] font-medium uppercase tracking-[0.1em] text-[var(--accent-ink)] transition hover:brightness-105"
-                >
-                  Subscribe
-                </button>
-              </form>
+              <NewsletterForm className="mt-3" />
             </div>
           </div>
         </div>
@@ -182,6 +284,53 @@ export function SiteFooter({ surface, wordmark, nav, socials, contact, cta, lega
         </div>
       </div>
     </footer>
+  );
+}
+
+/** The service list in the media footer. Links land on the services section of the portfolio. */
+const SERVICES = [
+  { label: 'Videography', href: '/media#services' },
+  { label: 'Video Editing', href: '/media#services' },
+  { label: 'Cinematography', href: '/media#services' },
+  { label: 'Photography', href: '/media#services' },
+  { label: 'Live Streaming', href: '/media#services' },
+  { label: 'Event Coverage', href: '/media#services' },
+  { label: 'Commercial Videos', href: '/media#services' },
+  { label: 'Social Media Content', href: '/media#services' },
+];
+
+/**
+ * The newsletter field.
+ *
+ * One implementation for every surface: the form posts to the same place it always did, and
+ * only its context changes. The input is given a real height and a full-width field so a long
+ * address is never clipped, and the button is a fixed, comfortable target rather than something
+ * competing with the text inside the same pill.
+ */
+function NewsletterForm({ className }: { className?: string }) {
+  return (
+    <form
+      action="#"
+      method="post"
+      className={cx(
+        'flex overflow-hidden rounded-pill border border-[rgba(243,241,236,.14)] bg-[rgba(243,241,236,.03)] p-1 transition focus-within:border-[var(--accent)]/45',
+        className,
+      )}
+    >
+      <input
+        type="email"
+        name="email"
+        aria-label="Email for newsletter"
+        placeholder="Your email"
+        className="min-w-0 flex-1 bg-transparent px-3 py-1.5 text-[0.8rem] text-fg placeholder:text-fg-dim focus:outline-none"
+      />
+      <button
+        type="submit"
+        className="shrink-0 rounded-pill bg-[var(--accent)] px-3 py-1.5 text-[0.72rem] font-medium uppercase tracking-[0.1em] text-[var(--accent-ink)] transition hover:brightness-105"
+      >
+        Subscribe
+      </button>
+    </form>
   );
 }
 

@@ -1,8 +1,12 @@
 /**
- * /media/pricing — rendered from the CMS page of the same slug when it exists, and from
- * this route's structural plan otherwise. No copy lives in this file.
+ * /media/pricing — the one standalone page in the Media Portfolio.
+ *
+ * Bespoke rather than CMS-block-composed, so it shares the single page's header, footer,
+ * motion language and contact access. Copy and package scope come from
+ * `lib/media/sample-portfolio.ts`; no fee is stated anywhere, because every project is
+ * quoted individually.
  */
-import { CmsPage } from '@/components/site/CmsPage';
+import { MediaPricingPage } from '@/components/site/MediaPricingPage';
 import { pageMetadata } from '@/lib/seo/page';
 
 export const revalidate = 60;
@@ -12,17 +16,10 @@ export function generateMetadata() {
     path: '/media/pricing',
     division: 'media',
     title: 'Pricing',
-
+    description: 'Photography, long-form and short-form video packages from Covenant Media, quoted per project.',
   });
 }
 
 export default function Page() {
-  return (
-    <CmsPage
-      surface="media"
-      path="/media/pricing"
-      title="Pricing"
-      eyebrow="Investment"
-    />
-  );
+  return <MediaPricingPage />;
 }

@@ -7,6 +7,7 @@
  */
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { SelectMenu } from '@/components/forms/SelectMenu';
 import { Icon } from '@/components/ui/Icon';
 import { cx } from '@/lib/utils/text';
 import type { PublicFieldDef, PublicFormConfig } from '@/lib/cms/forms';
@@ -20,11 +21,27 @@ interface Props {
   initialStatus?: 'idle' | 'sent';
   tone?: 'dark' | 'paper';
   submitNote?: string | null;
+  /**
+   * How dropdowns are presented. `native` (default) leaves the operating system in charge, which
+   * is right for the brand and tech surfaces; `menu` renders the design-matched panel from
+   * `SelectMenu` instead and keeps the native control underneath for the no-JS path.
+   */
+  selects?: 'native' | 'menu';
 }
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
-export function PublicForm({ config, action, token, turnstileSiteKey, successMessage, initialStatus = 'idle', tone = 'dark', submitNote }: Props) {
+export function PublicForm({
+  config,
+  action,
+  token,
+  turnstileSiteKey,
+  successMessage,
+  initialStatus = 'idle',
+  tone = 'dark',
+  submitNote,
+  selects = 'native',
+}: Props) {
   const [status, setStatus] = useState<Status>(initialStatus === 'sent' ? 'success' : 'idle');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
@@ -150,6 +167,7 @@ export function PublicForm({ config, action, token, turnstileSiteKey, successMes
             value={values[field.name] ?? ''}
             error={errors[field.name]}
             tone={tone}
+            selects={selects}
             onChange={(value) => {
               setValues((v) => ({ ...v, [field.name]: value }));
               if (errors[field.name]) setErrors((e) => ({ ...e, [field.name]: '' }));
@@ -217,12 +235,14 @@ function Field({
   value,
   error,
   tone,
+  selects,
   onChange,
 }: {
   field: PublicFieldDef;
   value: string;
   error?: string;
   tone: 'dark' | 'paper';
+  selects: 'native' | 'menu';
   onChange: (value: string) => void;
 }) {
   const id = `f-${field.name}`;
@@ -250,7 +270,7 @@ function Field({
 
   return (
     <div className={cx('min-w-0', field.width === 'full' || field.type === 'textarea' ? 'sm:col-span-2' : '')}>
-      <label htmlFor={id} className={cx('flex items-baseline justify-between gap-3 font-mono text-[0.625rem] uppercase tracking-[0.16em]', tone === 'paper' ? 'text-[rgba(16,17,21,.62)]' : 'text-fg-dim')}>
+      <label id={`${id}-label`} htmlFor={id} className={cx('flex items-baseline justify-between gap-3 font-mono text-[0.625rem] uppercase tracking-[0.16em]', tone === 'paper' ? 'text-[rgba(16,17,21,.62)]' : 'text-fg-dim')}>
         <span>
           {field.label}
           {field.required ? <span className="ml-1 text-[var(--accent)]" aria-hidden>*</span> : <span className="ml-1 opacity-50">(optional)</span>}
@@ -260,17 +280,31 @@ function Field({
         {field.type === 'textarea' ? (
           <textarea {...shared} rows={field.rows ?? 4} className={cx(shell, 'resize-y leading-relaxed')} />
         ) : field.type === 'select' ? (
-          <div className="relative">
-            <select {...shared} className={cx(shell, 'appearance-none pr-9')}>
-              <option value="">Select…</option>
-              {(field.options ?? []).map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <Icon name="chevron-down" size={14} className={cx('pointer-events-none absolute right-3 top-1/2 -translate-y-1/2', tone === 'paper' ? 'text-[rgba(16,17,21,.5)]' : 'text-fg-dim')} />
-          </div>
+          selects === 'menu' ? (
+            <SelectMenu
+              id={id}
+              name={field.name}
+              value={value}
+              onChange={onChange}
+              options={field.options ?? []}
+              required={field.required}
+              invalid={Boolean(error)}
+              describedBy={shared['aria-describedby']}
+              className={cx(shell, 'appearance-none pr-9')}
+            />
+          ) : (
+            <div className="relative">
+              <select {...shared} className={cx(shell, 'appearance-none pr-9')}>
+                <option value="">Select…</option>
+                {(field.options ?? []).map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <Icon name="chevron-down" size={14} className={cx('pointer-events-none absolute right-3 top-1/2 -translate-y-1/2', tone === 'paper' ? 'text-[rgba(16,17,21,.5)]' : 'text-fg-dim')} />
+            </div>
+          )
         ) : (
           <input
             {...shared}

@@ -396,6 +396,17 @@
   }
 }
 
+/* A panel arriving on transform alone: no opacity, because a modal that fades in is a modal the
+   page behind it shows through for as long as the fade lasts. */
+@keyframes cm-panel-in {
+  from {
+    transform: translate3d(0, 12px, 0) scale(0.985);
+  }
+  to {
+    transform: none;
+  }
+}
+
 @keyframes cm-float {
   0% {
     transform: translate3d(0, 0, 0) rotate(var(--tilt, 0deg));

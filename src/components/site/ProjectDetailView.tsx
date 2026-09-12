@@ -87,7 +87,7 @@ export async function ProjectDetailView({
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <Button href={division === 'tech' ? '/tech/contact' : '/media/contact'} iconEnd="arrow-right">
+                  <Button href={division === 'tech' ? '/tech/contact' : '/media#contact'} iconEnd="arrow-right">
                     {division === 'tech' ? 'Start a project' : 'Enquire about a shoot'}
                   </Button>
                   <Button href={basePath} variant="ghost" icon="arrow-left">

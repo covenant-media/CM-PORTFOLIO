@@ -40,6 +40,8 @@ These are permanent instructions for any AI agent (or developer using AI assista
   - Follow `.theme-{surface}` scoping and the `hairline`/`surface`/`eyebrow`/`display-*`/`lede` utility system.
   - Keep reduced-motion support working (use existing motion helpers, don't force animation).
   - Keep focus rings and skip links working.
+  - **Overlays and modals are portalled to `document.body` and animate on transform, not opacity.** A `position: fixed` overlay rendered inside an animated or transformed ancestor is clipped to that ancestor instead of the viewport, and an opacity fade on a full-screen backdrop is a fade of the page behind it — both have already caused "the card is see-through / the page shows around it" defects. Modal bodies also wrap rather than overflow, and the scrolling middle of a panel is `min-h-0`.
+  - **Brand, tool and product logos are the real artwork**, prepared once into `public/images/**` as transparent assets and served from there — never a hand-drawn approximation of a recognisable mark. Keep the accessible name on the tile, not on the image.
   - Admin UI should continue to derive navigation, labels, and actions from the module registry rather than hard-coding them.
 
 ## 4. Scope discipline

@@ -29,6 +29,19 @@ const nextConfig = {
       { protocol: 'https', hostname: 'picsum.photos' },
     ],
   },
+  /**
+   * The Media Portfolio is a single page, so the old per-section routes are folded back into
+   * it (2026-09-11). Their URLs are redirected rather than left to 404, because they were
+   * linked from the CMS navigation and from the footer of every surface.
+   */
+  async redirects() {
+    return [
+      { source: '/media/services', destination: '/media#services', permanent: true },
+      { source: '/media/about', destination: '/media#about', permanent: true },
+      { source: '/media/contact', destination: '/media#contact', permanent: true },
+      { source: '/media/work', destination: '/media#work', permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
