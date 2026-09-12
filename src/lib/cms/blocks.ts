@@ -244,7 +244,7 @@ export const BLOCK_TYPES: BlockTypeDef[] = [
       div(PORTFOLIO_DIVISION_OPTIONS),
       bool('showNote', 'Show pricing note from settings', { default: true }),
       text('ctaLabel', 'CTA label', { maxLength: 40, default: 'Request a quote' }),
-      text('ctaHref', 'CTA href', { maxLength: 120, default: '/media/contact' }),
+      text('ctaHref', 'CTA href', { maxLength: 120, default: '/media#contact' }),
     ],
   },
   {

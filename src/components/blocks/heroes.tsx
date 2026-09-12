@@ -293,7 +293,7 @@ export async function HeroMedia({ block, videos, settings }: { block: SectionDat
               <Button href="/media/work" size="lg" iconEnd="arrow-right" data-analytics="cta_click" data-analytics-target="/media/work">
                 {setting(settings, 'media.cta_primary', 'View work')}
               </Button>
-              <Button href="/media/contact" size="lg" variant="outline" data-analytics="cta_click" data-analytics-target="/media/contact">
+              <Button href="/media#contact" size="lg" variant="outline" data-analytics="cta_click" data-analytics-target="/media#contact">
                 {setting(settings, 'media.cta_secondary', 'Hire me')}
               </Button>
             </div>

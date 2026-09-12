@@ -34,7 +34,7 @@ The surfaces share data, components, and primitives but differ by theme tokens, 
 | Database | PostgreSQL 14+ (production via `pg`); embedded PGlite 0.5.8 for dev/demo |
 | Auth | Custom session-cookie auth with scrypt hashes, CSRF double-submit, role-based permissions, login rate limiting |
 | Media uploads | Local filesystem (`public/uploads`, served via `/uploads/[...path]` route) with S3/R2 driver interface; Sharp for image variants |
-| Video | oEmbed detection for YouTube, TikTok, Facebook, Vimeo, Instagram; lazy poster → click-to-embed pattern |
+| Video | oEmbed detection for YouTube, TikTok, Facebook, Vimeo, Instagram; lazy poster → click-to-embed pattern. An opened piece autoplays: the embed mounts muted (the start every browser honours) and is unmuted over the player's own command channel, so a piece never needs a second click on the platform's play button |
 | Markdown | `marked` + `sanitize-html` for blog/service copy |
 | Icons | Inline SVG set in `src/components/ui/Icon.tsx` + `simple-icons` for brands (extracted at build) |
 | Testing | Node built-in `node:test` runner (offline, no browser/network) |
@@ -44,9 +44,9 @@ The surfaces share data, components, and primitives but differ by theme tokens, 
 ## Major Application Areas
 
 1. **Public brand site** (`/`) — editorial hero, "two worlds" split, cross-discipline work grid, services, stats, testimonials, contact.
-2. **Media portfolio** (`/media/**`) — cinematic hero with floating video previews, video wall, project catalog with filters (category/format), project detail pages, services, pricing, photo galleries, contact.
-3. **Tech portfolio** (`/tech/**`) — hero with portrait + top skills, skill matrix, project grid (software/security), experience timeline, tools grid, certifications, resume download, contact.
-4. **Shared surfaces** — `/blog` (posts scoped per division), `/team`, `/work` (all projects), `/about`, `/services`, `/contact` (main variant), `/security` (legal/privacy), `/media/contact` and `/tech/contact`.
+2. **Media portfolio** (`/media`) — **one cinematic scroll**, plus Pricing as the only other page. Hero ("Covenant" in the brand gold, "Nsikan" in its white) with an upward-travelling role line over five roles, then the short-form reel: each vertical piece plays five seconds and rolls on by itself, with the next piece already playing just past the card's right edge so the change is instant. Then long-form work in two counter-moving rows, short-form in one vertical rail, event photography as an editorial card wall, a static "Tools I use" band carrying the real product icons, eight services, a five-step process, client stories, about and contact. Video previews roll muted and gain sound only on an explicit click; platforms without a keyless mute or poster (TikTok, Facebook, Instagram) show a poster and embed on click instead of pretending. `/media/work`, `/media/services`, `/media/about` and `/media/contact` are 308 redirects to in-page anchors; the three format catalogs and the CMS project detail route still resolve but are not linked from the one-pager. `/media/pricing` presents photography, long-form, short-form and extra packages, all "quoted per project".
+3. **Tech portfolio** (`/tech-portfolio`, canonical; `/tech/**` kept for legacy links) — hero with portrait + top skills, skill matrix, project grid (software/security), experience timeline, tools grid, certifications, resume download, contact.
+4. **Shared surfaces** — `/blog` (posts scoped per division), `/team`, `/work` (all projects), `/about`, `/services`, `/contact` (main variant), `/security` (legal/privacy) and `/tech/contact`.
 5. **CMS** (`/admin/**`) — full back office.
 6. **HTTP API** — forms (`/api/forms`), analytics events (`/api/events`), admin uploads/assets/export, OG image rendering (`/api/og`), RSS feed (`/feed.xml`), sitemap, robots.txt, upload serving (`/uploads/[...path]`).
 
@@ -94,9 +94,9 @@ The surfaces share data, components, and primitives but differ by theme tokens, 
 ## Business / Product Context (as evidenced by the codebase)
 
 - The studio founder is **Covenant Nsikan**. Tech surface wordmark uses the founder's personal name; the main/media surfaces use "Covenant Media".
-- Based in **Lagos, Nigeria** — currency defaults to NGN, phone placeholder `+234 …`, budget bands in ₦.
+- Based in **Lagos, Nigeria** — currency defaults to NGN, phone placeholder `+234 …`, budget bands in ₦. The media portfolio's studio record states the working area as "Lagos & Akwa Ibom, Nigeria".
 - The studio offers both **media production** (event/wedding/commercial/music video/shorts, photography, editing, color grading, motion graphics, thumbnails) and **technology services** (web/mobile apps, backends, dashboards, UI/UX, cybersecurity, GRC, incident response, AI tooling, automation).
 - The product philosophy visible in comments and guards is **"do not invent facts"**: testimonials require `approved_at`, metrics require `verified=true`, social links require `is_verified`, certifications require `completed=true` and a `verify_url`, resume requires an active published version, team placeholders are labelled, and pricing defaults to "quote" rather than a made-up number.
-- The platform ships with demo seed content (open Blender Foundation films for videos, sample service copy, sample projects) that is flagged `is_sample`. Real clients, metrics, outcomes, testimonials, experience history, certifications, and the resume are **deliberately empty** in the seed and are expected to be filled in by the owner before launch.
+- The platform ships with demo seed content (open Blender Foundation films for videos, sample service copy, sample projects) that is flagged `is_sample`. Real clients, metrics, outcomes, testimonials, experience history, certifications, and the resume are **deliberately empty** in the seed and are expected to be filled in by the owner before launch. One exception: the media portfolio's own library (`src/lib/media/sample-portfolio.ts`) is no longer demo data — it carries the studio's seven published long-form pieces and five vertical edits from its YouTube channel with their real titles and running times (`isSample: false`), so a fresh install still shows the demo `media_video` rows from the seed behind the CMS, but the media surface itself reads as the real studio work.
 - Default CMS credentials on a fresh seed are `covenant@example.test / covenant-demo-2026` (overridable via `ADMIN_EMAIL` / `ADMIN_PASSWORD`); the README explicitly instructs the operator to change them.
 - There is a single deployed codebase serving all three surfaces; routing and scoped themes are how they are separated — not separate apps or separate databases.

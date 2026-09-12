@@ -4,7 +4,6 @@ import { SiteHeader } from './SiteHeader';
 import { SiteFooter, ScrollProgress } from './SiteFooter';
 import { SiteBehaviours } from '@/components/ui/SiteBehaviours';
 import { LightboxHost } from '@/components/ui/Lightbox';
-import { MediaBand } from '@/components/site/MediaBand';
 
 export type Surface = 'main' | 'media' | 'tech';
 
@@ -30,7 +29,7 @@ const SURFACE_DEFAULTS: Record<
     wordmark: { primary: 'Covenant Media', secondary: 'Portfolio' },
     navLocation: { header: 'media_header', footer: 'media_footer' },
     socialPlacement: 'media',
-    cta: { label: 'Hire me', href: '/media/contact' },
+    cta: { label: 'Hire me', href: '/media#contact' },
   },
   tech: {
     homeHref: '/tech-portfolio',
@@ -114,14 +113,6 @@ export async function ExperienceShell({ surface, children }: { surface: Surface;
       <main id="main" className="flex-1">
         {children}
       </main>
-
-      {surface === 'media' ? (
-        <MediaBand
-          primary={{ label: ctaLabel, href: config.cta.href }}
-          whatsapp={(contact.whatsappHref as string) ?? null}
-          whatsappLabel={(contact.whatsappLabel as string) ?? 'WhatsApp'}
-        />
-      ) : null}
 
       <SiteFooter
         surface={surface}

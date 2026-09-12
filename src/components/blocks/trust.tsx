@@ -136,7 +136,7 @@ export function PricingTable({
 }) {
   const props = blockProps('pricing_table', block.props);
   const ctaLabel = ps(props, 'ctaLabel', 'Request a quote');
-  const ctaHref = ps(props, 'ctaHref', '/media/contact');
+  const ctaHref = ps(props, 'ctaHref', '/media#contact');
 
   if (!packages.length) {
     return (

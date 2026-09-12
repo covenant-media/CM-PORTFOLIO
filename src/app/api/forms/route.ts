@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const payload = await readPayload(request);
   const variant = String(payload.form ?? 'main') as FormVariant;
   const config = FORM_CONFIGS[variant];
-  const fallbackPath = variant === 'media' ? '/media/contact' : variant === 'tech' ? '/tech/contact' : '/contact';
+  const fallbackPath = variant === 'media' ? '/media#contact' : variant === 'tech' ? '/tech/contact' : '/contact';
 
   if (!config) return respond(request, native, fallbackPath, { status: 400, error: 'Unknown form.' });
 
