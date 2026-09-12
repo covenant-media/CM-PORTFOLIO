@@ -583,7 +583,13 @@ async function main() {
   const catLabel: Record<string, string> = { frontend: 'Frontend', backend: 'Backend', databases: 'Databases', design: 'UI/UX', grc: 'GRC & Security' };
   for (const sk of techSkills) {
     const slug = sk.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const exists = await db.select<{ id: string }>(`SELECT id FROM skill WHERE name = $1::text AND category = $2::text`, [sk.name, sk.category]);
+    // Match on the unique slug or the name (case-insensitive). The seed already ships a skill
+    // such as "Go", so a name-only check would try to insert a second row for slug "go" and trip
+    // the unique constraint, which aborted the whole `npm run setup`.
+    const exists = await db.select<{ id: string }>(
+      `SELECT id FROM skill WHERE slug = $1::text OR lower(name) = lower($2::text)`,
+      [slug, sk.name],
+    );
     if (exists.length === 0) {
       await insertRow('skill', {
         slug,
@@ -678,7 +684,9 @@ async function main() {
         ('contact.email', $8::jsonb),
         ('contact.whatsapp', $9::jsonb),
         ('contact.response_time', $10::jsonb),
-        ('founder.availability', $11::jsonb)
+        ('founder.availability', $11::jsonb),
+        ('brand.legal_name', $12::jsonb),
+        ('founder.portrait', $13::jsonb)
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
     [
       JSON.stringify('Covenant Nsikan'),
@@ -692,9 +700,14 @@ async function main() {
       JSON.stringify('+234 9064095620'),
       JSON.stringify('Available 24/7 — replies within hours'),
       JSON.stringify('Available: 24/7'),
+      // The footer prints "© <year> <legal name>". The owner asked for exactly
+      // "© <year> Covenant Media", so the legal name is the brand name.
+      JSON.stringify('Covenant Media'),
+      // The published portrait already in the repository, used until one is uploaded via the CMS.
+      JSON.stringify('/images/First_Img.png'),
     ],
   );
-  add('setting', 11);
+  add('setting', 13);
 
   console.log(JSON.stringify({ created: counts, notes }, null, 2));
 }

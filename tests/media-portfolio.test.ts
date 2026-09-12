@@ -10,7 +10,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { buildEmbed, posterCandidates, resolvePlayable } from '../src/lib/media/embed';
-import { wrapOffset } from '../src/components/site/MediaTicker';
+import { clampDrag, wrapOffset } from '../src/components/site/MediaTicker';
 import {
   MEDIA_HERO_ITEM,
   MEDIA_STATS,
@@ -200,19 +200,27 @@ test('pricing covers the four groups and every package is scoped', () => {
   }
 });
 
-test('the row is exactly the five networks, in order, all with destinations', () => {
+test('the row is exactly the six studio profiles, in order, all with real destinations', () => {
   assert.deepEqual(
     MEDIA_SOCIALS.map((entry) => entry.network),
-    ['tiktok', 'facebook', 'instagram', 'youtube', 'whatsapp'],
-    'the hero row presents TikTok, Facebook, Instagram, YouTube and WhatsApp, in that order',
+    ['tiktok', 'facebook', 'instagram', 'linkedin', 'youtube', 'whatsapp'],
+    'the row presents TikTok, Facebook, Instagram, LinkedIn, YouTube and WhatsApp, in that order',
   );
   for (const entry of MEDIA_SOCIALS) {
     assert.ok(entry.label, `${entry.network} needs a label`);
     assert.match(entry.url, /^https:\/\/[^#\s]+$/, `${entry.network} must point somewhere real, never "#"`);
+    // Never a platform home page: every entry is the studio's own destination.
+    assert.doesNotMatch(
+      entry.url,
+      /^https:\/\/www\.(facebook|instagram|linkedin)\.com\/?$/,
+      `${entry.network} must be the studio's profile, not the platform home`,
+    );
   }
-  // Facebook and Instagram have no handle yet, so they point at the platforms themselves until
-  // the studio supplies one. Every other entry is the studio's own destination.
+  // The profiles the owner supplied, plus the three confirmed from the studio's own output.
   assert.ok(MEDIA_SOCIALS.find((e) => e.network === 'tiktok')?.url.includes('covenant.media'));
+  assert.ok(MEDIA_SOCIALS.find((e) => e.network === 'facebook')?.url.includes('1C8JPrYov1'));
+  assert.ok(MEDIA_SOCIALS.find((e) => e.network === 'instagram')?.url.includes('covenant_media_tv'));
+  assert.ok(MEDIA_SOCIALS.find((e) => e.network === 'linkedin')?.url.includes('covenant-media-021b242a3'));
   assert.ok(MEDIA_SOCIALS.find((e) => e.network === 'youtube')?.url.includes('Covenant_Media'));
   assert.ok(MEDIA_SOCIALS.find((e) => e.network === 'whatsapp')?.url.includes('2349064095620'));
 });
@@ -249,7 +257,7 @@ const MEDIA_PAGE = read('src/components/site/MediaPortfolioPage.tsx');
 test('the studio figures are the four that were supplied, in order', () => {
   assert.deepEqual(
     MEDIA_STATS.map((stat) => `${stat.value}${stat.suffix}`),
-    ['8+', '60+', '40+', '98%'],
+    ['8+', '40+', '30+', '96%'],
   );
   for (const stat of MEDIA_STATS) assert.ok(stat.label.length > 4, `${stat.label} needs a real label`);
 });
@@ -332,7 +340,7 @@ test('the details card fits the screen and the stage plays as soon as it opens',
   // video and the card is never wider than the piece it is showing.
   assert.match(
     MEDIA_CARDS,
-    /const VERTICAL_STAGE_WIDTH = 'min\(calc\(96vw - 3\.5rem\), calc\(min\(56svh, 34rem\) \* 9 \/ 16\)\)'/,
+    /const VERTICAL_STAGE_WIDTH = 'min\(calc\(96vw - 3\.5rem\), calc\(min\(70svh, 40rem\) \* 9 \/ 16\)\)'/,
     'the portrait stage has one definition, bounded by the viewport height and width',
   );
   assert.match(MEDIA_CARDS, /aspectRatio: '9 \/ 16'/, 'the portrait stage is exactly the video\'s ratio');
@@ -373,7 +381,7 @@ test('the footer never renders an empty social row on the media surface', () => 
 });
 
 test('the media footer keeps the tech footer arrangement and its own surface', () => {
-  const footer = read('src/components/site/SiteFooter.tsx');
+  const footer = read('src/components/site/SiteFooter.tsx').replace(/\r\n/g, '\n');
   // Its own branch, opened by surface.
   assert.match(footer, /if \(surface === 'media'\) \{/, 'the media footer is its own arrangement');
   const media = footer.slice(footer.indexOf("if (surface === 'media')"), footer.indexOf('return (\n    <footer className="relative isolate mt-px'));
@@ -432,13 +440,14 @@ test('an opened piece starts playing without a second click', () => {
   assert.match(MEDIA_PLAYER, /if \(phase === 'idle' \|\| !embeddableLater \|\| src\) return;/, 'the embed source is built once');
 });
 
-test('the hero reel rolls: five seconds each, the next piece waiting and playing beside the card', () => {
+test('the hero reel rolls: eight seconds each, the waiting pieces playing beside the card', () => {
   const card = read('src/components/site/MediaHeroVideo.tsx');
   const advance = /const ADVANCE_MS = (\d+);/.exec(card);
   assert.ok(advance, 'the card declares its own dwell time');
-  assert.equal(Number(advance[1]), 5000, 'each piece plays for five seconds');
-  // The piece beside the card is a live player, not a poster: two players at most, and the one
-  // waiting is already running when it rolls in.
+  assert.equal(Number(advance[1]), 8000, 'each piece plays for eight seconds');
+  // The piece on screen and the two waiting beside it are live players, not posters: the
+  // previous and the next are already running when either arrow is pressed, which is what
+  // removes the pause and the reload at the switch.
   assert.match(card, /state === 'current' \|\| state === 'next'/, 'the waiting piece mounts a player too');
   assert.match(card, /translate3d\(calc\(100% \+ var\(--cm-gap\)\),0,0\)/, 'the incoming piece waits one slide to the right');
   assert.match(card, /--cm-peek/, 'part of the incoming piece shows outside the card');
@@ -448,9 +457,57 @@ test('the hero reel rolls: five seconds each, the next piece waiting and playing
 
 test('the greeting wears the logo: the given name in the brand gold, the surname in its white', () => {
   const greeting = MEDIA_PAGE.slice(MEDIA_PAGE.indexOf('<h1'), MEDIA_PAGE.indexOf('</h1>'));
-  assert.match(greeting, /MaskReveal[\s\S]*?className="text-\[var\(--accent\)\]"/, 'the given name is the brand gold');
-  assert.match(greeting, /delay=\{140\}[\s\S]*?className="text-fg"|className="text-fg"[\s\S]*?delay=\{140\}/, 'the surname is the brand white');
+  // The name is plain text at display size, the Tech hero's approach, so a masked in-view reveal
+  // can never leave it stranded inside its own clip box — it cannot ship hidden.
+  assert.doesNotMatch(greeting, /MaskReveal/, 'the name is no longer gated behind a masked in-view reveal');
+  assert.match(greeting, /className="text-\[var\(--accent\)\]">\{firstName\}/, 'the given name is the brand gold');
+  assert.match(greeting, /className="text-fg[^"]*">\{lastName\}/, 'the surname is the brand white');
   assert.doesNotMatch(greeting, /font-light/, 'the name is set at a weight that holds on a dark page');
+  // Restrained, not shouty, and the surname takes its own line on mobile so the two fit.
+  assert.match(greeting, /text-\[clamp\(2\.1rem,5\.4vw,3\.5rem\)\]/, 'the name is set at a restrained display size');
+  assert.match(greeting, /text-fg max-lg:block/, 'the surname wraps onto its own line on mobile');
+  // It is revealed by the Tech hero's own mechanism: a FadeIn wrapper that is never clipped.
+  assert.match(MEDIA_PAGE, /<FadeIn delay=\{140\} y=\{10\}>\s*<h1/, 'the name rides in on a FadeIn wrapper');
+});
+
+test('a strip only accepts a drag along its own direction, so it can never be pulled backwards', () => {
+  // Right-to-left rows (positive speed) take a leftward pull; a rightward pull is clamped to
+  // zero, which is what makes the reel snap back instead of being dragged through the loop.
+  assert.equal(clampDrag(22, -60), 60, 'a right-to-left row follows a leftward pull');
+  assert.equal(clampDrag(22, 60), 0, 'and refuses a rightward one');
+  // Left-to-right rows (negative speed) are the mirror image.
+  assert.equal(clampDrag(-20, 60), 60, 'a left-to-right row follows a rightward pull');
+  assert.equal(clampDrag(-20, -60), 0, 'and refuses a leftward one');
+  // Both long-form rows and the short-form rail are swipable.
+  const galleries = read('src/components/site/MediaGalleries.tsx');
+  assert.equal((galleries.match(/pauseOnHover draggable/g) ?? []).length, 3, 'the long-form rows and the short-form rail all swipe');
+  // The swipe carries momentum and then hands back to the automatic roll.
+  const ticker = read('src/components/site/MediaTicker.tsx');
+  assert.match(ticker, /fling\.current \*= Math\.pow\(0\.02, dt\)/, 'a flick glides and decays back into the roll');
+  assert.match(ticker, /addEventListener\('pointerup', finish\)/, 'a release outside the strip still ends the drag');
+});
+
+test('the desktop rows are sized like the 1355×920 reference: 3.5+ long-form, 4.5+ short-form', () => {
+  const galleries = read('src/components/site/MediaGalleries.tsx');
+  // Desktop widths are fixed rather than viewport-based, so every screen from the reference width
+  // up shows the same composition instead of zooming the cards as the window grows.
+  assert.match(galleries, /xl:w-\[20rem\]/, 'long-form cards are fixed at 20rem on desktop');
+  assert.match(galleries, /xl:w-\[15\.5rem\]/, 'short-form cards are fixed at 15.5rem on desktop');
+  // In the 1248px page column (84rem minus its own padding) that is ~3.7 and ~4.8 pieces at once.
+  const column = 1344 - 2 * 48;
+  assert.ok(column / (320 + 16) >= 3.5, 'at least three and a half long-form pieces fit');
+  assert.ok(column / (248 + 14) >= 4.5, 'at least four and a half short-form pieces fit');
+});
+
+test('the statement ends white, the About copy is plain, and the hero card is centred', () => {
+  // "We capture." and "We create." keep the surface accent; only "We inspire." is white.
+  assert.match(MEDIA_PAGE, /className=\{index === all\.length - 1 \? 'text-white' : undefined\}/, 'only the closing phrase is white');
+  // The biography is ordinary body copy again, not justified.
+  assert.doesNotMatch(MEDIA_PAGE, /space-y-4 text-justify/, 'the About copy is not justified');
+  // The hero card is centred in its column, so the peek is even on both sides.
+  const hero = read('src/components/site/MediaHeroVideo.tsx');
+  assert.match(hero, /relative mx-auto w-\[calc\(100%-var\(--cm-peek\)\)\]/, 'the card is centred, so the peek is even on both sides');
+  assert.match(hero, /mx-auto mt-5 w-\[calc\(100%-2\*var\(--cm-peek\)\)\] text-center/, 'and its caption sits under the card centre');
 });
 
 test('the tools band stands still and carries the real marks', () => {
@@ -472,7 +529,7 @@ test('the tools band stands still and carries the real marks', () => {
 
 test('the About column reads in the owner\'s order and the credit sits under the picture', () => {
   const about = MEDIA_PAGE.slice(MEDIA_PAGE.indexOf('id="about"'));
-  const order = ['About the Studio', 'The Person Behind the Brand', 'MEDIA_STUDIO.statement'];
+  const order = ['About the Studio', 'The FACE Behind the Brand', 'MEDIA_STUDIO.statement'];
   const positions = order.map((token) => about.indexOf(token));
   assert.ok(positions.every((value) => value >= 0), 'the About blocks are all present');
   assert.ok(positions[0]! < positions[1]! && positions[1]! < positions[2]!, 'eyebrow, heading, then the statement');
@@ -482,19 +539,21 @@ test('the About column reads in the owner\'s order and the credit sits under the
   const statement = about.indexOf('MEDIA_STUDIO.statement');
   const actions = about.indexOf('Work with the Studio');
   assert.ok(bio > 0 && card > bio && statement > card && actions > statement, 'the left column follows the brief');
-  // The credit is outside the picture, in the brand gold, and the name inside keeps the logo split.
+  // The credit is outside the picture, in the brand white, and the name inside keeps the logo split.
   const figure = about.slice(about.indexOf('<figure'), about.indexOf('</figure>'));
   assert.match(figure, /<\/div>[\s\S]{0,260}?<figcaption/, 'the credit sits under the frame, not over the picture');
-  assert.match(figure, /text-\[var\(--accent\)\][\s\S]*?\{MEDIA_STUDIO.founderCredit\}/, 'the credit is set in the brand gold');
+  assert.match(figure.slice(figure.indexOf('<figcaption')), /text-white[\s\S]*?\{MEDIA_STUDIO.founderCredit\}/, 'the credit is set in the brand white');
   assert.match(MEDIA_STUDIO.founderCredit, /^Founder \/ CEO, Covenant Media$/, 'the credit is the line the owner asked for');
 });
 
 test('the media footer carries the studio paragraph, the header social row and the short legal line', () => {
-  const footer = read('src/components/site/SiteFooter.tsx');
+  // Normalise line endings: the branch is sliced out by matching a `return (` + newline pair, so
+  // a CRLF checkout would otherwise swallow the whole file and make every assertion meaningless.
+  const footer = read('src/components/site/SiteFooter.tsx').replace(/\r\n/g, '\n');
   const media = footer.slice(footer.indexOf("if (surface === 'media')"), footer.indexOf('return (\n    <footer className="relative isolate mt-px'));
   assert.match(media, /MediaSocialButtons/, 'the footer shows the same five social buttons as the header');
   assert.match(media, /description \?\? cta.body/, 'the studio paragraph sits under the brand');
-  assert.match(media, /All rights reserved\. Designed &amp; Built with precision\./, 'the copyright line is the full one');
+  assert.ok(media.includes('© {year} {legal.brandLine}.'), 'the copyright line is the exact short one'); assert.ok(!/All rights reserved|Designed &amp; Built with precision/.test(media), 'the removed sentence is not added back');
   assert.match(media, /legal.tagline \? <span className="font-mono uppercase/, 'the studio promise stays beside it');
   for (const gone of ['Privacy', 'Terms', 'Security &amp; privacy']) {
     assert.ok(!media.includes(gone), `the media footer no longer links ${gone}`);

@@ -132,13 +132,15 @@ async function main() {
   // ── 2. Site settings (populate brand/contact/identity defaults) ────────────
   const defaults: Record<string, string | boolean | number> = {
     'brand.name': 'Covenant Media',
-    'brand.legal_name': 'Covenant Media Studio',
+    'brand.legal_name': 'Covenant Media',
     'brand.tagline': 'Media and technology, under one roof.',
     'brand.media_tagline': 'WE CAPTURE · WE CREATE · WE INSPIRE',
     'brand.statement': 'A studio that makes films and builds software — each discipline sharpening the other.',
     'founder.name': 'Covenant Nsikan',
     'founder.title': 'Founder · Filmmaker & Software Engineer',
-    'founder.portrait': 'ast_demo_portrait',
+    // Left blank on purpose: the published portrait already in the repository is the fallback
+    // until the owner uploads one through the CMS, so a demo never swaps in a stock photo.
+    'founder.portrait': '',
     'founder.bio_short': 'Covenant Nsikan is a Lagos-based filmmaker and software engineer. He runs Covenant Media, where cinematic production and serious engineering live on the same team.',
     'founder.availability': 'Booking Q3 / Q4 shoots and taking on one software engagement at a time.',
     'contact.email': 'hello@example.test',
@@ -174,49 +176,59 @@ async function main() {
   add('site_setting', Object.keys(defaults).length);
   report.notes.push('Site settings populated with demo brand/contact/identity copy. Edit in CMS → Site settings.');
 
-  // ── 3. Social links (flip the seeded drafts to verified, with sample URLs) ─
-  const socialFixups: Record<string, { url: string; handle: string; label: string; placements: string[] }> = {
-    instagram: { url: 'https://instagram.com/covenantmedia.sample', handle: '@covenantmedia', label: 'Instagram', placements: ['media', 'main', 'footer', 'contact'] },
-    youtube: { url: 'https://youtube.com/@covenantmedia.sample', handle: '@covenantmedia', label: 'YouTube', placements: ['media', 'main', 'footer'] },
-    tiktok: { url: 'https://tiktok.com/@covenantmedia.sample', handle: '@covenantmedia', label: 'TikTok', placements: ['media', 'footer'] },
-    x: { url: 'https://x.com/covenantmedia.sample', handle: '@covenantmedia', label: 'X', placements: ['main', 'footer'] },
-    linkedin: { url: 'https://linkedin.com/in/covenant.sample', handle: 'covenant-nsikan', label: 'LinkedIn', placements: ['tech', 'main', 'footer'] },
-    github: { url: 'https://github.com/covenantmedia.sample', handle: 'covenantmedia', label: 'GitHub', placements: ['tech', 'footer'] },
-  };
-  for (const [network, data] of Object.entries(socialFixups)) {
-    await db.execute(
-      `UPDATE social_link
-         SET url = $1::text, handle = $2::text, label = $3::text,
-             placements = $4::jsonb, is_verified = true, status = 'published'
-       WHERE network = $5::text`,
-      [data.url, data.handle, data.label, JSON.stringify(data.placements), network],
-    );
-  }
-  // Email and WhatsApp "social" contact shortcuts
-  const extraSocials = [
-    { network: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/2348000000000', handle: '+234 800 000 0000', placements: ['contact', 'media'], order: 20 },
-    { network: 'email', label: 'Email', url: 'mailto:hello@example.test', handle: 'hello@example.test', placements: ['contact', 'footer'], order: 21 },
+  // ── 3. Social links (the studio's own profiles) ───────────────────────────
+  // Only a destination the owner has actually supplied is published. Anything without a
+  // confirmed handle stays in the CMS but is left unverified and drafted, so the public row can
+  // never point at a guess. `sort_order` is set here too, so the row reads in the studio's own
+  // order rather than the order the rows happened to be created in.
+  const socialFixups: Array<{
+    network: string;
+    url: string;
+    handle: string | null;
+    label: string;
+    placements: string[];
+    order: number;
+    published: boolean;
+  }> = [
+    { network: 'tiktok', url: 'https://www.tiktok.com/@covenant.media', handle: 'covenant.media', label: 'TikTok', placements: ['media', 'main', 'footer'], order: 1, published: true },
+    { network: 'facebook', url: 'https://www.facebook.com/share/1C8JPrYov1/', handle: 'Covenant Media', label: 'Facebook', placements: ['media', 'main', 'footer'], order: 2, published: true },
+    { network: 'instagram', url: 'https://www.instagram.com/covenant_media_tv', handle: 'covenant_media_tv', label: 'Instagram', placements: ['media', 'main', 'footer'], order: 3, published: true },
+    { network: 'linkedin', url: 'https://www.linkedin.com/in/covenant-media-021b242a3', handle: 'covenant-media', label: 'LinkedIn', placements: ['media', 'tech', 'main', 'footer'], order: 4, published: true },
+    { network: 'youtube', url: 'https://www.youtube.com/@Covenant_Media', handle: 'Covenant_Media', label: 'YouTube', placements: ['media', 'main', 'footer'], order: 5, published: true },
+    { network: 'whatsapp', url: 'https://wa.me/2349064095620', handle: '+234 906 409 5620', label: 'WhatsApp', placements: ['media', 'contact', 'footer'], order: 6, published: true },
+    // The studio inbox: it already has a home in the footer and the contact section, so it stays
+    // off the social row but one toggle away in the CMS.
+    { network: 'email', url: 'mailto:covenantmedia0015@gmail.com', handle: 'covenantmedia0015@gmail.com', label: 'Email', placements: ['contact', 'footer'], order: 7, published: false },
+    // No handle supplied yet — present in the CMS, hidden everywhere.
+    { network: 'x', url: '#', handle: null, label: 'X', placements: ['main', 'footer'], order: 8, published: false },
+    { network: 'github', url: '#', handle: null, label: 'GitHub', placements: ['tech', 'footer'], order: 9, published: false },
   ];
-  for (const s of extraSocials) {
+  for (const s of socialFixups) {
     const exists = await db.select<{ id: string }>(`SELECT id FROM social_link WHERE network = $1::text`, [s.network]);
-    if (exists.length === 0 || force) {
-      if (exists.length === 0) {
-        await insertRow('social_link', {
-          network: s.network,
-          label: s.label,
-          url: s.url,
-          handle: s.handle,
-          icon: s.network,
-          placements: s.placements,
-          is_verified: true,
-          status: 'published',
-          sort_order: s.order,
-        });
-        add('social_link');
-      }
+    if (exists.length) {
+      await db.execute(
+        `UPDATE social_link
+            SET url = $1::text, handle = $2::text, label = $3::text, placements = $4::jsonb,
+                icon = $5::text, sort_order = $6::int, is_verified = $7::boolean, status = $8::text
+          WHERE network = $9::text`,
+        [s.url, s.handle, s.label, JSON.stringify(s.placements), s.network, s.order, s.published, s.published ? 'published' : 'draft', s.network],
+      );
+    } else {
+      await insertRow('social_link', {
+        network: s.network,
+        label: s.label,
+        url: s.url,
+        handle: s.handle,
+        icon: s.network,
+        placements: s.placements,
+        is_verified: s.published,
+        status: s.published ? 'published' : 'draft',
+        sort_order: s.order,
+      });
+      add('social_link');
     }
   }
-  report.notes.push('Social links flipped to published + verified with sample URLs. Replace with real handles and set is_verified=false for anything not yet confirmed.');
+  report.notes.push("Social links set to the studio's own profiles (TikTok, Facebook, Instagram, LinkedIn, YouTube, WhatsApp). X and GitHub stay drafted until handles are supplied.");
 
   // ── 4. Testimonials (all flagged is_sample, with plausible quotes) ────────
   if (force || (await count('testimonial')) === 0) {

@@ -726,11 +726,12 @@ export const MEDIA_STUDIO = {
  * The studio's social profiles.
  *
  * Only destinations that are known to exist are listed, because a social button that leads
- * nowhere is worse than no button. Each of these three was confirmed from the studio's own
- * published work: the YouTube channel is the `author_url` YouTube returns for its videos, and
- * the TikTok handle is the one the owner publishes in his own video description. WhatsApp is
- * built from the published studio number. Add an entry (or verify the CMS `social_link` row)
- * and it appears in the hero row, the footer and the contact section automatically.
+ * nowhere is worse than no button. Every entry below is a profile the owner supplied, or one
+ * confirmed from the studio's own published work (the YouTube channel is the `author_url`
+ * YouTube returns for its videos; the TikTok handle is the one published in the video
+ * descriptions; WhatsApp is built from the published studio number). Add an entry (or verify the
+ * CMS `social_link` row) and it appears in the hero row, the footer and the contact section
+ * automatically.
  */
 export interface MediaSocial {
   network: string;
@@ -739,20 +740,18 @@ export interface MediaSocial {
 }
 
 export const MEDIA_SOCIALS: MediaSocial[] = [
-  // TikTok, YouTube and WhatsApp are the studio's own published destinations. Facebook and
-  // Instagram belong to the studio too, but their handles have not been supplied yet, so those
-  // two point at the platforms themselves: the buttons work today, and replacing each URL with
-  // the real profile is a one-line change here (or one row in CMS, Social links) with no code
-  // change at all.
+  // Every destination here is the studio's own: the profiles the owner supplied are used as
+  // given (tracking parameters trimmed) so no button leads to a generic platform home page.
   { network: 'tiktok', label: 'TikTok', url: 'https://www.tiktok.com/@covenant.media' },
-  { network: 'facebook', label: 'Facebook', url: 'https://www.facebook.com' },
-  { network: 'instagram', label: 'Instagram', url: 'https://www.instagram.com' },
+  { network: 'facebook', label: 'Facebook', url: 'https://www.facebook.com/share/1C8JPrYov1/' },
+  { network: 'instagram', label: 'Instagram', url: 'https://www.instagram.com/covenant_media_tv' },
+  { network: 'linkedin', label: 'LinkedIn', url: 'https://www.linkedin.com/in/covenant-media-021b242a3' },
   { network: 'youtube', label: 'YouTube', url: 'https://www.youtube.com/@Covenant_Media' },
   { network: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/2349064095620' },
 ];
 
 /** The networks the studio publishes on, in the order the hero row presents them. */
-export const MEDIA_SOCIAL_NETWORKS = ['tiktok', 'facebook', 'instagram', 'youtube', 'whatsapp'] as const;
+export const MEDIA_SOCIAL_NETWORKS = ['tiktok', 'facebook', 'instagram', 'linkedin', 'youtube', 'whatsapp'] as const;
 
 /**
  * The tools behind the work, shown as marks only.
@@ -784,9 +783,9 @@ export const MEDIA_TOOLS: MediaTool[] = [
  */
 export const MEDIA_STATS: { label: string; value: number; suffix: string }[] = [
   { label: 'Years of Experience', value: 8, suffix: '+' },
-  { label: 'Completed Projects', value: 60, suffix: '+' },
-  { label: 'Happy Clients', value: 40, suffix: '+' },
-  { label: 'Client Satisfaction', value: 98, suffix: '%' },
+  { label: 'Completed Projects', value: 40, suffix: '+' },
+  { label: 'Happy Clients', value: 30, suffix: '+' },
+  { label: 'Client Satisfaction', value: 96, suffix: '%' },
 ];
 
 /* ── pricing ─────────────────────────────────────────────────────────────────

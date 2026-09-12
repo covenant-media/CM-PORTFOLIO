@@ -42,6 +42,12 @@ interface Props {
 }
 
 const MAX_COPIES = 8;
+/** A pull must clear this before it counts as a drag, so a tap still opens a card. */
+const DRAG_THRESHOLD = 6;
+/** A swipe moves the strip faster than the finger, so browsing a row feels quick. */
+const DRAG_GAIN = 1.35;
+/** Ceiling on the momentum a flick can carry, so it cannot rocket the strip. */
+const FLING_MAX = 2400;
 
 /**
  * Wrap a running offset into `[0, width)`.
@@ -55,6 +61,19 @@ export function wrapOffset(offset: number, width: number): number {
   if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(offset)) return 0;
   const wrapped = ((offset % width) + width) % width;
   return Object.is(wrapped, -0) ? 0 : wrapped;
+}
+
+/**
+ * The drag distance a strip accepts, along its own direction of travel.
+ *
+ * A strip only ever accepts a pull the way its roll already moves: a row that rolls
+ * right-to-left can be pulled left but not right, and a left-to-right row the other way. A pull
+ * the wrong way clamps to zero, so the content returns to where it was instead of being dragged
+ * backwards through the loop. Exported because it is the rule the brief pins down, and a pure
+ * function is cheaper to test than to eyeball.
+ */
+export function clampDrag(speed: number, dx: number): number {
+  return Math.max(0, speed >= 0 ? -dx : dx);
 }
 
 export function MediaTicker({
@@ -74,15 +93,19 @@ export function MediaTicker({
   const offset = useRef(0);
   const groupWidth = useRef(0);
   const dragging = useRef(false);
+  const moved = useRef(false);
   const dragStart = useRef({ x: 0, offset: 0 });
   const resumeAt = useRef(0);
+  /** Pointer velocity at release, and the momentum it turns into. */
+  const lastPoint = useRef({ x: 0, t: 0 });
+  const velocity = useRef(0);
+  const fling = useRef(0);
 
   const [copies, setCopies] = useState(2);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [visible, setVisible] = useState(true);
   const [reduced, setReduced] = useState(false);
-  const [moved, setMoved] = useState(false);
 
   // Reduced motion: one static group, no animation at all.
   useEffect(() => {
@@ -128,6 +151,13 @@ export function MediaTicker({
     pausedRef.current = paused || hovered || focused || !visible || reduced;
   }, [paused, hovered, focused, visible, reduced]);
 
+  // The conditions that stop even a glide: an explicit pause, being off screen, or reduced
+  // motion. Hover is deliberately not one of them, so a swipe still carries its momentum home.
+  const blockedRef = useRef(false);
+  useEffect(() => {
+    blockedRef.current = paused || !visible || reduced;
+  }, [paused, visible, reduced]);
+
   // The loop. Writes the transform directly; wrapping is modulo the measured group width.
   useEffect(() => {
     if (reduced) return;
@@ -139,8 +169,15 @@ export function MediaTicker({
       last = now;
       const width = groupWidth.current;
       if (!width) return;
-      if (!pausedRef.current && !dragging.current && now > resumeAt.current && !document.hidden) {
-        offset.current += speed * dt;
+      if (!blockedRef.current && !dragging.current && !document.hidden) {
+        if (fling.current !== 0) {
+          // The swipe glides on its own velocity and decays back into the automatic roll.
+          offset.current += fling.current * dt;
+          fling.current *= Math.pow(0.02, dt);
+          if (Math.abs(fling.current) < 40) fling.current = 0;
+        } else if (!pausedRef.current && now >= resumeAt.current) {
+          offset.current += speed * dt;
+        }
       }
       // Keep the offset in [0, width) so it can never drift into float error or a gap.
       const wrapped = wrapOffset(offset.current, width);
@@ -153,38 +190,57 @@ export function MediaTicker({
   // Pointer handling. `touch-action: pan-y` below leaves vertical scrolling to the browser and
   // hands horizontal gestures to the strip, so a swipe works on touch without hijacking the
   // page. A movement threshold separates a real swipe from a tap, so clicking a card never
-  // counts as a drag and never stops the roll.
-  const DRAG_THRESHOLD = 6;
+  // counts as a drag and never stops the roll, and a release outside the strip still ends it.
+  const endDrag = useCallback(() => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    moved.current = false;
+    // The swipe's velocity becomes a short glide in the strip's own direction, so a flick keeps
+    // rolling rather than stopping dead under the finger. A pull the wrong way left no velocity,
+    // so it simply settles back where it was.
+    const onward = Math.max(0, speed >= 0 ? -velocity.current : velocity.current) * DRAG_GAIN;
+    fling.current = Math.min(onward, FLING_MAX);
+    resumeAt.current = performance.now() + 400;
+  }, [speed]);
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (reduced) return;
+      if (!draggable || reduced) return;
       dragging.current = true;
-      setMoved(false);
+      moved.current = false;
+      velocity.current = 0;
+      fling.current = 0;
       dragStart.current = { x: event.clientX, offset: offset.current };
+      lastPoint.current = { x: event.clientX, t: performance.now() };
+      // The gesture continues while the finger is down even if it leaves the strip, so the loop
+      // is never left paused because the release happened somewhere else on the page.
+      const finish = () => {
+        window.removeEventListener('pointerup', finish);
+        window.removeEventListener('pointercancel', finish);
+        endDrag();
+      };
+      window.addEventListener('pointerup', finish);
+      window.addEventListener('pointercancel', finish);
     },
-    [reduced],
+    [draggable, reduced, endDrag],
   );
 
   const onPointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (!dragging.current) return;
       const dx = event.clientX - dragStart.current.x;
-      if (Math.abs(dx) > DRAG_THRESHOLD) {
-        if (!moved) setMoved(true);
-        offset.current = dragStart.current.offset - dx;
-      }
+      if (!moved.current && Math.abs(dx) > DRAG_THRESHOLD) moved.current = true;
+      // Only a pull along the strip's own direction moves it; a reversed pull holds at the start
+      // and then snaps back, which is what stops a reel being dragged backwards through.
+      const onward = clampDrag(speed, dx) * DRAG_GAIN;
+      offset.current = speed >= 0 ? dragStart.current.offset + onward : dragStart.current.offset - onward;
+      const now = performance.now();
+      const dt = now - lastPoint.current.t;
+      if (dt > 0) velocity.current = ((event.clientX - lastPoint.current.x) / dt) * 1000;
+      lastPoint.current = { x: event.clientX, t: now };
     },
-    [moved],
+    [speed],
   );
-
-  const onPointerUp = useCallback(() => {
-    if (!dragging.current) return;
-    dragging.current = false;
-    // Resume the automatic roll shortly after the finger leaves, so a swipe does not fight it.
-    if (moved) resumeAt.current = performance.now() + 1400;
-    setMoved(false);
-  }, [moved]);
 
   return (
     <div
@@ -199,8 +255,8 @@ export function MediaTicker({
       onBlurCapture={() => setFocused(false)}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
       style={{ touchAction: draggable ? 'pan-y' : undefined, cursor: draggable ? 'grab' : undefined }}
     >
       {/* The track is the element the loop transforms; every group after the first is a

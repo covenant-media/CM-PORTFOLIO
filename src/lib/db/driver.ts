@@ -169,27 +169,51 @@ function dataDir(): string {
   return nodePath.isAbsolute(dir) ? nodePath.join(dir, 'pgdata') : nodePath.join(process.cwd(), dir, 'pgdata');
 }
 
-/** `.cm-data/socket.json` written by scripts/pglite-socket.ts while dev is running. */
+/** A cheap TCP probe: is something actually listening on this host:port? */
+async function portAnswers(host: string, port: number, timeoutMs = 500): Promise<boolean> {
+  const net = await import('node:net');
+  return new Promise((resolve) => {
+    const socket = net.connect({ host, port });
+    const done = (value: boolean) => {
+      socket.destroy();
+      resolve(value);
+    };
+    socket.setTimeout(timeoutMs, () => done(false));
+    socket.once('connect', () => done(true));
+    socket.once('error', () => done(false));
+  });
+}
+
+/**
+ * `.cm-data/socket.json` written by scripts/pglite-socket.ts while dev is running.
+ *
+ * The path is built with `path.join`, which matters on Windows: the previous hand-written
+ * `…/socket.json` string kept the native backslash separator, so the file was never found there
+ * and this always returned null. Every CLI script then opened a **second** PGlite on the same data
+ * directory instead of talking to the running socket — two writers on one PGlite store, which is
+ * what corrupted the local database ("could not open file base/5/…").
+ *
+ * Liveness is decided by probing the port rather than by signalling the PID, because
+ * `process.kill(pid, 0)` is unreliable on Windows and a false negative here reintroduces exactly
+ * that second-writer bug.
+ */
 async function devSocketUrl(): Promise<string | null> {
   if (process.env.CM_DISABLE_PGLITE_SOCKET === '1') return null;
   const fs = await import('node:fs');
-  const infoPath = `${dataDir().replace(/\/pgdata$/, '')}/socket.json`;
-  if (!fs.existsSync(infoPath)) return null;
+  const infoPath = nodePath.join(nodePath.dirname(dataDir()), 'socket.json');
+  let info: { url?: string; pid?: number; port?: number } | null = null;
   try {
-    const info = JSON.parse(fs.readFileSync(infoPath, 'utf8')) as { url?: string; pid?: number; port?: number };
-    if (info.pid) {
-      try {
-        process.kill(info.pid, 0);
-      } catch {
-        return null; // stale file from a server that exited
-      }
+    if (fs.existsSync(infoPath)) {
+      info = JSON.parse(fs.readFileSync(infoPath, 'utf8')) as { url?: string; pid?: number; port?: number };
     }
-    if (info.url) return info.url;
-    if (info.port) return `postgres://postgres@127.0.0.1:${info.port}/postgres`;
-    return null;
   } catch {
-    return null;
+    info = null;
   }
+
+  const host = process.env.CM_DB_HOST || '127.0.0.1';
+  const port = Number(info?.port ?? process.env.CM_DB_PORT ?? 55432);
+  if (!(await portAnswers(host, port))) return null; // nothing listening — a direct instance is safe
+  return info?.url ?? `postgres://postgres@${host}:${port}/postgres`;
 }
 
 export type DriverName = 'postgres' | 'pglite';

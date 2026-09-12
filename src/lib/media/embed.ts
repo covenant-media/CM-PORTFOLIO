@@ -109,6 +109,9 @@ export function buildEmbed(
         playlist: loop && sourceId ? sourceId : undefined,
         controls: controls ? 1 : 0,
         playsinline: 1,
+        // Subtitles start off for every visitor; the player's own menu still lets them turn
+        // them on whenever they like.
+        cc_load_policy: 0,
         // Lets the hero card's own control talk to a player that is already running instead of
         // rebuilding the frame to change its sound.
         enablejsapi: 1,

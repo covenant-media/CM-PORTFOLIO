@@ -10,10 +10,9 @@ import type { AdminActionState } from '@/lib/cms/admin';
 
 export interface LoginFormProps {
   next: string;
-  devHint?: { email: string; password: string } | null;
 }
 
-export function LoginForm({ next, devHint }: LoginFormProps) {
+export function LoginForm({ next }: LoginFormProps) {
   const [state, action, pending] = useActionState<AdminActionState | null, FormData>(signInAction, null);
   const emailRef = useRef<HTMLInputElement>(null);
 
@@ -72,16 +71,6 @@ export function LoginForm({ next, devHint }: LoginFormProps) {
         {pending ? <Icon name="spinner" size={15} className="animate-spin" /> : <Icon name="lock" size={15} />}
         {pending ? 'Checking…' : 'Sign in'}
       </button>
-
-      {devHint ? (
-        <p className="rounded-2 border border-line bg-ink-900/60 px-3 py-2 text-[11.5px] leading-relaxed text-fg-dim">
-          <span className="text-fg-muted">Development seed.</span> Sign in with{' '}
-          <code className="font-mono text-[11px] text-[var(--accent)]">{devHint.email}</code> /{' '}
-          <code className="font-mono text-[11px] text-[var(--accent)]">{devHint.password}</code>, then change the
-          password under <span className="text-fg-muted">Account</span>. Demo data only — it never exists in a real
-          deployment.
-        </p>
-      ) : null}
     </form>
   );
 }

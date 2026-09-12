@@ -138,7 +138,7 @@ export function SiteFooter({ surface, wordmark, nav, socials, description, conta
         {/* The room's own line: the copyright in full and the studio's promise, with no legal
             links beside them (the policy pages stay reachable from the rest of the site). */}
         <div className="container-page flex flex-col gap-3 border-t border-[rgba(243,241,236,.07)] py-5 text-[0.8125rem] text-fg-dim md:flex-row md:items-center md:justify-between">
-          <p>© {year} {legal.brandLine}. All rights reserved. Designed &amp; Built with precision.</p>
+          <p>© {year} {legal.brandLine}.</p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             {legal.tagline ? <span className="font-mono uppercase tracking-[0.16em]">{legal.tagline}</span> : null}
             <Link

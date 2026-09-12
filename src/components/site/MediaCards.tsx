@@ -314,7 +314,7 @@ function MetaChip({ children }: { children: React.ReactNode }) {
  * than the comfortable part of the screen. The card is sized from this, so the two can never
  * disagree.
  */
-const VERTICAL_STAGE_WIDTH = 'min(calc(96vw - 3.5rem), calc(min(56svh, 34rem) * 9 / 16))';
+const VERTICAL_STAGE_WIDTH = 'min(calc(96vw - 3.5rem), calc(min(70svh, 40rem) * 9 / 16))';
 /** The card's own horizontal padding, which the width above is built around. */
 const VERTICAL_CARD_PADDING = '2rem';
 

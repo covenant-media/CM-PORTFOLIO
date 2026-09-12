@@ -1,6 +1,6 @@
 # Development Status
 
-_Last updated: 2026-09-12 (Media Portfolio correction round: greeting in the logo's gold/white, the hero card rebuilt as a rolling reel — five seconds a piece with the incoming piece preloaded, playing and peeking past the frame — the details card portalled and fully opaque, the short-form modal measured exactly from its video, one-click sound-on-open playback through the player's command channel, the "Tools I use" band made static with the real product icons, the About column in the owner's order with the credit outside the portrait, and the media footer's studio paragraph, social row and short legal line. Tech Portfolio and the main brand site untouched.)_
+_Last updated: 2026-09-12 (Database + access round: fixed the Windows path bug in `lib/db/driver.ts` that made CLI scripts open a second PGlite on the live data directory and corrupt it — the cause of `58P01 could not open file "base/5/…"` on sign-in — hardened socket detection with a TCP probe, rebuilt the database, re-created the two owner accounts, removed the credential hint from the sign-in page, fixed the `/icon` 404 and the Turbopack root warning. Tech Portfolio and the main brand site untouched.)_
 
 This document describes the current development state of the Covenant Media platform. It distinguishes what is implemented and working, what is in progress or partial, known issues, and remaining work visible from the repository.
 

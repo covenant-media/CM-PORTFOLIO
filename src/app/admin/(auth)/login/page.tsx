@@ -9,11 +9,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (session) redirect('/admin');
   const { next } = await searchParams;
 
-  // Only the local demo seed prints itself; a real deployment never sees this block.
-  const devHint =
-    process.env.NODE_ENV !== 'production' && process.env.ADMIN_SEED_VISIBLE !== '0'
-      ? { email: process.env.ADMIN_EMAIL ?? 'covenant@example.test', password: process.env.ADMIN_PASSWORD ?? 'covenant-demo-2026' }
-      : null;
-
-  return <LoginForm next={next ?? '/admin'} devHint={devHint} />;
+  // No credentials are ever rendered on this page, in any environment. The form is the only thing
+  // here, so a visitor who reaches it learns nothing about the accounts it accepts — and a
+  // deployment can never leak a seeded default by leaving it on screen.
+  return <LoginForm next={next ?? '/admin'} />;
 }

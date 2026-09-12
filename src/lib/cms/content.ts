@@ -939,7 +939,7 @@ export async function sitemapEntries(): Promise<{ path: string; lastmod?: string
   }
   // The media surface is one page plus Pricing: /media/work, /media/services, /media/about and
   // /media/contact are redirects now, and a redirect does not belong in a sitemap.
-  for (const path of ['/about', '/services', '/work', '/team', '/blog', '/security', '/contact', '/media', '/media/pricing', '/media/long-form', '/media/short-form', '/media/photography', '/tech-portfolio', '/tech/about', '/tech/skills', '/tech/services', '/tech/projects', '/tech/experience', '/tech/testimonials', '/tech/resume', '/tech/contact']) push(path);
+  for (const path of ['/about', '/services', '/work', '/team', '/blog', '/security', '/contact', '/media', '/media-portfolio', '/media/pricing', '/media/long-form', '/media/short-form', '/media/photography', '/tech-portfolio', '/tech/about', '/tech/skills', '/tech/services', '/tech/projects', '/tech/experience', '/tech/testimonials', '/tech/resume', '/tech/contact']) push(path);
   return out.filter((e) => e.path.length > 1 || e.path === '/').map((e) => ({ ...e, path: e.path.replace(/\/$/, '') || '/' }));
 }
 

@@ -19,7 +19,7 @@
 import { Section, SectionHeader, Eyebrow } from '@/components/ui/Section';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
-import { MaskReveal, FadeIn, Parallax } from '@/components/ui/Motion';
+import { FadeIn, Parallax } from '@/components/ui/Motion';
 import { MediaHeader, type MediaAnchor } from './MediaHeader';
 import { MediaRoleLine } from './MediaRoleLine';
 import { MediaHeroVideo } from './MediaHeroVideo';
@@ -34,7 +34,7 @@ import { SiteBehaviours } from '@/components/ui/SiteBehaviours';
 import { LightboxHost } from '@/components/ui/Lightbox';
 import { FORM_CONFIGS } from '@/lib/cms/forms';
 import { issueFormToken } from '@/lib/security/forms';
-import { contactDetails, siteContext, testimonialsFor } from '@/lib/cms/content';
+import { assetsByIds, contactDetails, siteContext, testimonialsFor } from '@/lib/cms/content';
 import {
   LONG_FORM_ITEMS,
   MEDIA_CAPABILITIES,
@@ -100,7 +100,16 @@ export default async function MediaPortfolioPage() {
   const settings = ctx.settings;
   const brandName = String(settings['brand.name'] ?? '').trim() || MEDIA_STUDIO.brand;
   const founderName = String(settings['founder.name'] ?? '').trim() || MEDIA_STUDIO.founder;
-  const portrait = String(settings['founder.portrait'] ?? '').trim() || MEDIA_STUDIO.portrait;
+  // The portrait setting is an image-picker value: it can hold an uploaded asset id or a plain
+  // URL. Resolve an id through the media library so a picture chosen in the CMS actually renders;
+  // a URL or a repository path is used as-is, and an unset setting falls back to the published
+  // portrait. Without this, picking an image in the CMS wrote an id straight into the `src`.
+  const portraitValue = String(settings['founder.portrait'] ?? '').trim();
+  const portraitAsset =
+    portraitValue && !/^(https?:)?\/\//.test(portraitValue) && !portraitValue.startsWith('/')
+      ? (await assetsByIds([portraitValue]))[portraitValue]?.url ?? null
+      : null;
+  const portrait = portraitAsset || portraitValue || MEDIA_STUDIO.portrait;
   // The greeting prints the given name plainly and the surname in the accent, the way the
   // reference and the tech hero both do. A single-word name simply renders without the accent.
   const nameParts = founderName.trim().split(/\s+/);
@@ -255,18 +264,26 @@ export default async function MediaPortfolioPage() {
                     its white, set at a weight that holds on a dark page. It is the same split
                     the wordmark uses, so the hero and the mark read as one brand. */}
                 <FadeIn>
-                  <p className="font-mono text-[0.75rem] uppercase tracking-[0.28em] text-fg-muted md:text-[0.8125rem]">
+                  <p className="text-center font-mono text-[0.75rem] uppercase tracking-[0.28em] text-fg-muted md:text-[0.8125rem] lg:text-left">
                     Hello, I&apos;m
                   </p>
                 </FadeIn>
 
-                <h1 className="mt-3 flex flex-wrap items-baseline gap-x-[0.22em] font-display font-semibold leading-[1.06] tracking-[-0.03em] text-[clamp(2.9rem,8.2vw,5.6rem)] md:mt-4">
-                  <MaskReveal as="span" lines={[firstName]} className="text-[var(--accent)]" lineClassName="whitespace-nowrap" />
-                  {lastName ? <MaskReveal as="span" lines={[lastName]} className="text-fg" lineClassName="whitespace-nowrap" delay={140} /> : null}
-                </h1>
+                {/* The name is rendered the way the Tech hero renders its own: plain text at display
+                    size inside a FadeIn, never behind a masked in-view reveal. The mask variant
+                    shipped the text already clipped and offset (opacity 0.001, translated 108% out
+                    of its overflow box) and its reveal never ran, because the observed element sat
+                    outside its own clip, so the name stayed invisible while still being present in
+                    the DOM. The split is the logo's: given name in the brand gold, surname in the
+                    surface white. */}
+                <FadeIn delay={140} y={10}>
+                  <h1 className="mt-3 text-center font-display text-[clamp(2.1rem,5.4vw,3.5rem)] font-semibold leading-[1.08] tracking-[-0.03em] md:mt-4 lg:text-left">
+                    <span className="text-[var(--accent)]">{firstName}</span> {lastName ? <span className="text-fg max-lg:block">{lastName}</span> : null}
+                  </h1>
+                </FadeIn>
 
                 <FadeIn delay={220}>
-                  <p className="mt-5 flex items-center gap-3 md:mt-6">
+                  <p className="mt-5 flex items-center justify-center gap-3 md:mt-6 lg:justify-start">
                     <span aria-hidden className="h-px w-6 shrink-0 bg-[var(--accent)]/60 md:w-9" />
                     <MediaRoleLine
                       prefix="A"
@@ -277,14 +294,14 @@ export default async function MediaPortfolioPage() {
                 </FadeIn>
 
                 <FadeIn delay={300}>
-                  <p className="lede mt-6 max-w-xl text-[1.0625rem]">
+                  <p className="lede mx-auto mt-6 max-w-xl text-justify text-[1.0625rem] lg:mx-0 lg:max-w-xl lg:text-left">
                     Covenant Media produces films, photography and live streams for brands, events and creators. I take a project from the
                     first conversation through production, editing, colour and finishing, and hand over work that is ready to publish.
                   </p>
                 </FadeIn>
 
                 <FadeIn delay={380}>
-                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                  <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                     <Button href="#work" size="lg" iconEnd="arrow-right">
                       See the Work
                     </Button>
@@ -312,7 +329,7 @@ export default async function MediaPortfolioPage() {
 
             {/* ── capability list ── */}
             <FadeIn delay={120}>
-              <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2.5 border-t border-[rgba(243,241,236,.08)] pt-6">
+              <ul className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2.5 border-t border-[rgba(243,241,236,.08)] pt-6 lg:justify-start">
                 {MEDIA_CAPABILITIES.map((fact) => (
                   <li key={fact} className="flex items-center gap-2 text-[0.8125rem] text-fg-muted">
                     <span aria-hidden className="size-1 rounded-full bg-[var(--accent)]" />
@@ -460,10 +477,10 @@ export default async function MediaPortfolioPage() {
           <div className="container-page">
             <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-x-14">
               {/* 1 + 2: eyebrow and heading */}
-              <div className="order-1 lg:col-span-7 lg:row-start-1">
+              <div className="order-1 text-center lg:col-span-7 lg:row-start-1 lg:text-left">
                 <FadeIn>
                   <Eyebrow>About the Studio</Eyebrow>
-                  <h2 className="display-3 mt-4">The Person Behind the Brand</h2>
+                  <h2 className="display-3 mt-4">The FACE Behind the Brand</h2>
                 </FadeIn>
               </div>
 
@@ -472,7 +489,7 @@ export default async function MediaPortfolioPage() {
                   credit sits outside the frame, under the picture. */}
               <div className="order-2 mt-9 lg:col-span-5 lg:col-start-8 lg:row-span-5 lg:row-start-1 lg:mt-0">
                 <FadeIn delay={100}>
-                  <figure className="mx-auto w-full max-w-[26rem] lg:max-w-none">
+                  <figure className="mx-auto w-full max-w-[21rem] sm:max-w-[26rem] lg:max-w-none">
                     <div className="relative aspect-[4/5] overflow-hidden rounded-4 border border-[rgba(243,241,236,.12)] bg-[color:var(--color-ink-900)]">
                       {/* Framed slightly tighter than the frame and anchored to the top, so the
                           subject fills the card rather than floating inside it. */}
@@ -493,8 +510,8 @@ export default async function MediaPortfolioPage() {
                         </span>
                       </span>
                     </div>
-                    {/* The credit, under the picture and outside it, in the same gold. */}
-                    <figcaption className="mt-3.5 text-center font-mono text-[0.625rem] uppercase tracking-[0.2em] text-[var(--accent)]">
+                    {/* The credit, under the picture and outside it, in the brand white. */}
+                    <figcaption className="mt-3.5 text-center font-mono text-[0.625rem] uppercase tracking-[0.2em] text-white">
                       {MEDIA_STUDIO.founderCredit}
                     </figcaption>
                   </figure>
@@ -542,8 +559,8 @@ export default async function MediaPortfolioPage() {
               {/* 5: the studio statement */}
               <div className="order-5 mt-9 lg:col-span-7 lg:row-start-4 lg:mt-10">
                 <FadeIn delay={120}>
-                  <p className="font-display text-[1.05rem] uppercase tracking-[0.28em] text-[var(--accent)] md:text-[1.15rem]">
-                    {MEDIA_STUDIO.statement}
+                  <p className="text-center font-display text-[1.05rem] uppercase tracking-[0.28em] text-[var(--accent)] md:text-[1.15rem] lg:text-left">
+                    {MEDIA_STUDIO.statement.split('. ').map((phrase, index, all) => (<span key={phrase} className={index === all.length - 1 ? 'text-white' : undefined}>{index < all.length - 1 ? `${phrase}. ` : phrase}</span>))}
                   </p>
                 </FadeIn>
               </div>

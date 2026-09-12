@@ -30,8 +30,8 @@ export async function generateMetadata(): Promise<Metadata> {
     formatDetection: { telephone: true, address: true, email: true },
     alternates: { canonical: '/' },
     icons: {
-      icon: [{ url: '/icon', type: 'image/svg+xml' }],
-      shortcut: ['/icon'],
+      icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+      shortcut: ['/icon.svg'],
     },
     manifest: undefined,
   };

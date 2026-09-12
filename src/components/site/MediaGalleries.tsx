@@ -57,14 +57,14 @@ export function MediaLongFormRows({ items, more }: { items: MediaItem[]; more?: 
   if (!items.length) return null;
 
   const card = (entry: MediaItem) => (
-    <div key={entry.id} className="w-[76vw] sm:w-[44vw] lg:w-[31vw] xl:w-[26vw]">
+    <div key={entry.id} className="w-[76vw] sm:w-[44vw] lg:w-[24vw] xl:w-[20rem]">
       <MediaPreviewCard
         item={entry}
         aspect="video"
         preview="hover"
         previewPaused={item !== null}
         onOpen={open}
-        sizes="(max-width: 640px) 76vw, (max-width: 1024px) 44vw, 28vw"
+        sizes="(max-width: 640px) 76vw, (max-width: 1024px) 44vw, 20rem"
       />
     </div>
   );
@@ -80,10 +80,10 @@ export function MediaLongFormRows({ items, more }: { items: MediaItem[]; more?: 
       {/* Row one travels right to left, row two travels left to right. Both pause on hover so
           a card can be read, previewed and opened without chasing it. */}
       <div className="mt-10 space-y-4 md:space-y-5">
-        <MediaTicker speed={22} gap={16} pauseOnHover ariaLabel="Long-form work, first row">
+        <MediaTicker speed={22} gap={16} pauseOnHover draggable ariaLabel="Long-form work, first row">
           {items.map(card)}
         </MediaTicker>
-        <MediaTicker speed={-20} gap={16} pauseOnHover ariaLabel="Long-form work, second row">
+        <MediaTicker speed={-20} gap={16} pauseOnHover draggable ariaLabel="Long-form work, second row">
           {alternate.map(card)}
         </MediaTicker>
       </div>
@@ -113,16 +113,16 @@ export function MediaShortFormRail({ items, more }: { items: MediaItem[]; more?:
       {/* Card widths are chosen so the group is always wider than the viewport: five pieces at
           this size fill a desktop row before the loop repeats, which is what keeps a duplicate
           from ever appearing inside the visible strip. */}
-      <MediaTicker speed={20} gap={14} pauseOnHover ariaLabel="Short-form work" className="mt-10">
+      <MediaTicker speed={20} gap={14} pauseOnHover draggable ariaLabel="Short-form work" className="mt-10">
         {items.map((entry) => (
-          <div key={entry.id} className="w-[62vw] sm:w-[38vw] lg:w-[23vw] xl:w-[20vw]">
+          <div key={entry.id} className="w-[62vw] sm:w-[38vw] lg:w-[18vw] xl:w-[15.5rem]">
             <MediaPreviewCard
               item={entry}
               aspect="portrait"
               preview="none"
               previewPaused={item !== null}
               onOpen={open}
-              sizes="(max-width: 640px) 62vw, (max-width: 1024px) 38vw, 21vw"
+              sizes="(max-width: 640px) 62vw, (max-width: 1024px) 38vw, 15.5rem"
             />
           </div>
         ))}
@@ -254,7 +254,7 @@ export function MediaTestimonialRail({ items }: { items: MediaTestimonial[] }) {
           onPointerDown={() => setDragging(true)}
           onPointerUp={() => setDragging(false)}
           className={cx(
-            'flex w-[80vw] shrink-0 flex-col justify-between rounded-4 border border-[rgba(243,241,236,.08)] bg-[color:var(--color-ink-900)]/70 p-6 backdrop-blur sm:w-[54vw] lg:w-[30vw] xl:w-[23vw]',
+            'flex w-[80vw] shrink-0 flex-col justify-between rounded-4 border border-[rgba(243,241,236,.08)] bg-[color:var(--color-ink-900)]/70 p-5 backdrop-blur sm:w-[54vw] sm:p-6 lg:w-[30vw] xl:w-[23vw]',
             dragging && 'select-none',
           )}
         >

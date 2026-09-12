@@ -32,7 +32,7 @@ nothing to install and the driver path is identical to production.
 | `npm run db:seed` | sample content, safe to re-run — it skips tables that already have rows |
 | `npm run db:reset` | drop, migrate, seed |
 | `npm run db:status` | row counts per table |
-| `npm run db:reset-admin` | create/repair the CMS owner account — `ADMIN_EMAIL` / `ADMIN_PASSWORD` (defaults `covenant@example.test` / `covenant-demo-2026`), re-seeds system roles if missing |
+| `npm run db:reset-admin` | create/repair the CMS owner account — `ADMIN_EMAIL` / `ADMIN_PASSWORD` (a bare local run falls back to the demo default `covenant@example.test` / `covenant-demo-2026`), re-seeds system roles if missing. **Set both env vars before running it against a real database.** |
 | `npm run lint` | ESLint (Next config, correctness rules only) |
 | `npm run test` | the `tests/` suite — no browser, no network |
 | `npm run test:watch` | same, on file changes |
@@ -93,8 +93,10 @@ as unverified drafts so they stay hidden until each URL is confirmed. Clients, m
 testimonials, experience history, certifications and the resume are deliberately **empty** — those
 are facts only the owner can supply, and empty states render as empty states.
 
-CMS sign-in for the seeded database is `covenant@example.test` / `covenant-demo-2026`. Change it
-immediately; `ADMIN_EMAIL` / `ADMIN_PASSWORD` override the seed.
+On a brand-new database the seed creates one owner: `covenant@example.test` /
+`covenant-demo-2026`. Change it immediately, or set `ADMIN_EMAIL` / `ADMIN_PASSWORD` first — the
+seed only runs that block when the account table is empty. The sign-in page never displays any
+credentials.
 
 ## Uploads in production
 

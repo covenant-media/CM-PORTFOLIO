@@ -15,6 +15,10 @@ const nextConfig = {
   // Standalone-friendly: server output keeps the image optimizer working on VPS.
   output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
   compress: true,
+  // This repo can sit under a parent folder that also carries a package-lock.json, and Next then
+  // infers that parent as the workspace root — printing the "multiple lockfiles" warning and
+  // resolving chunks from the wrong place. Pin the root to this project.
+  turbopack: { root: import.meta.dirname },
   // PGlite loads its WASM/FS from module-relative paths and pg is a native-ish
   // driver: bundling them breaks file resolution at runtime, so keep both external.
   serverExternalPackages: ['@electric-sql/pglite', 'pg'],

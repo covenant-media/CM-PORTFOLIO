@@ -3,24 +3,26 @@
 /**
  * The hero's short-form showcase: one vertical piece at a time, in a framed phone-style card.
  *
- * **What it does, and why.** Each piece plays for five seconds, then the reel rolls on by itself:
+ * **What it does, and why.** Each piece plays for eight seconds, then the reel rolls on by itself:
  * the piece that was on screen slides out to the left and the next piece — which has been waiting
  * just off the right-hand edge, already loaded and already playing — slides straight into the
  * frame. Nothing has to load at the moment of the switch, so there is no pause, no spinner and no
  * second of black between two pieces.
  *
  * **How the roll is built.** One strip of slides sits under the card. The card's frame is painted
- * with an opaque ring and the strip is masked to the window plus one narrow strip *outside* the
- * card's right edge, so the incoming piece shows as a slim column of moving video past the frame
- * — the next frame of the reel, visible before it arrives. Because the same masked strip carries
+ * with an opaque ring and the strip is masked to the window plus a narrow strip *outside* the
+ * card on both sides, so the incoming piece shows as a slim column of moving video past the right
+ * edge and the outgoing piece keeps its place as the same slim column on the left — the previous
+ * frame of the reel stays visible until it rolls back in. Because the same masked strip carries
  * the outgoing piece out through the frame's left edge, the movement reads as one continuous
  * film rather than as two elements swapping places.
  *
  * **Nothing else sits behind the card.** The dimmed poster plates that used to flank the frame are
  * gone; the only thing around the card is the surface's own brass light.
  *
- * **Weight.** Two players are mounted at a time — the piece on screen and the piece waiting
- * beside it — and both are torn down while the card is off screen. Every other slide is a still.
+ * **Weight.** Three players are mounted at a time — the piece on screen and the two waiting beside
+ * it, previous and next — and all three are torn down while the card is off screen. Every other
+ * slide is a still.
  *
  * **Sound.** The reel is muted, always: it is an ambient preview nobody asked for. Selecting a
  * piece opens it in the details card, where sound belongs, and that is a deliberate click.
@@ -29,7 +31,7 @@
  * leaving a still card whose controls and dots still work.
  *
  * **Laying the film out.** `--cm-ring` is the frame's border plus padding (3px + 8px), `--cm-gap`
- * the space between two slides and `--cm-peek` how much of the incoming piece shows outside the
+ * the space between two slides and `--cm-peek` how much of the waiting pieces shows outside the
  * card. Everything below is expressed in those three numbers, so the card can be resized from one
  * place.
  */
@@ -40,26 +42,26 @@ import { MediaDetailsCard, useDetailsCard } from './MediaCards';
 import type { MediaItem } from '@/lib/media/sample-portfolio';
 import { cx } from '@/lib/utils/text';
 
-/** How long a piece plays before the reel rolls on. The brief asks for five seconds. */
-const ADVANCE_MS = 5000;
+/** How long a piece plays before the reel rolls on. The brief asks for eight seconds. */
+const ADVANCE_MS = 8000;
 /** After a manual step the card stays put long enough for the chosen piece to be watched. */
 const HOLD_AFTER_STEP_MS = 14000;
-/** The roll itself. Slow enough to read as movement, quick enough to feel instant. */
-const ROLL_MS = 780;
 
 const RING = '0.6875rem';
 const GAP = '0.5rem';
 const PEEK = '2.5rem';
 
 /**
- * What the strip is allowed to show: nothing under the frame's own ring (the film runs *under*
- * the card there), the window itself, and then the peek outside the card's right edge, fading out
- * so the strip reads as continuing rather than ending.
+ * What the strip is allowed to show: a slim column of the previous piece outside the card's left
+ * edge (fading in at the strip's own start), nothing under the frame's ring on either side (the
+ * film runs *under* the card there), the window itself, and the same slim column of the next
+ * piece outside the right edge, fading out so the strip reads as continuing rather than ending.
  */
 const RAIL_MASK =
   'linear-gradient(to right,' +
-  ' transparent 0, transparent var(--cm-ring),' +
-  ' #000 calc(var(--cm-ring) + 0.5px), #000 calc(100% - var(--cm-peek) - var(--cm-ring)),' +
+  ' transparent 0, #000 calc(0.85rem + 0.5px), #000 var(--cm-peek),' +
+  ' transparent calc(var(--cm-peek) + 0.5px), transparent calc(var(--cm-peek) + var(--cm-ring)),' +
+  ' #000 calc(var(--cm-peek) + var(--cm-ring) + 0.5px), #000 calc(100% - var(--cm-peek) - var(--cm-ring)),' +
   ' transparent calc(100% - var(--cm-peek) - var(--cm-ring) + 0.5px), transparent calc(100% - var(--cm-peek)),' +
   ' #000 calc(100% - var(--cm-peek) + 0.5px), #000 calc(100% - 0.85rem), transparent 100%)';
 
@@ -73,7 +75,6 @@ export function MediaHeroVideo({ items }: { items: MediaItem[] }) {
   const { item: openItem, open, close } = useDetailsCard();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [index, setIndex] = useState(0);
-  const [leaving, setLeaving] = useState<number | null>(null);
   const [held, setHeld] = useState(false);
   const [paused, setPaused] = useState(false);
   const [onScreen, setOnScreen] = useState(false);
@@ -81,7 +82,6 @@ export function MediaHeroVideo({ items }: { items: MediaItem[] }) {
 
   const count = items.length;
   const active = items[index] ?? null;
-  const nextIndex = count > 1 ? (index + 1) % count : index;
 
   useEffect(() => {
     const query = window.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -101,17 +101,31 @@ export function MediaHeroVideo({ items }: { items: MediaItem[] }) {
     return () => observer.disconnect();
   }, []);
 
-  // The piece that just left keeps its player for the length of the roll, so it never blinks
-  // back to a still while it is still on screen.
-  const settled = useRef(index);
-  useEffect(() => {
-    const from = settled.current;
-    settled.current = index;
-    if (from === index) return;
-    setLeaving(from);
-    const timer = window.setTimeout(() => setLeaving(null), ROLL_MS + 80);
-    return () => window.clearTimeout(timer);
-  }, [index]);
+  // Every slide lives in a fixed slot relative to the piece on screen: the previous piece parks
+  // one slide to the LEFT (its right edge flush with the card's, so it stays visible past the
+  // frame), the next parks one slide to the RIGHT, and both mount live players so stepping either
+  // direction is instant. Everything else sleeps off-screen until it is called.
+  type Slot = 'current' | 'next' | 'prev' | 'rest';
+  const twoUp = count > 2;
+  const slotFor = (position: number): Slot => {
+    const distance = (position - index + count) % count;
+    if (distance === 0) return 'current';
+    if (twoUp && distance === count - 1) return 'prev';
+    if (distance === 1) return 'next';
+    return 'rest';
+  };
+  const SLOT_TRANSFORM: Record<Slot, string> = {
+    current: 'translate3d(0,0,0)',
+    next: 'translate3d(calc(100% + var(--cm-gap)),0,0)',
+    prev: 'translate3d(calc(-100% - var(--cm-gap)),0,0)',
+    rest: 'translate3d(calc(100% + var(--cm-gap)),0,0)',
+  };
+  const SLOT_LAYER: Record<Slot, string> = {
+    current: 'z-30',
+    next: 'z-10',
+    prev: 'z-20',
+    rest: 'z-10',
+  };
 
   const step = useCallback(
     (direction: -1 | 1) => {
@@ -163,24 +177,25 @@ export function MediaHeroVideo({ items }: { items: MediaItem[] }) {
       <div aria-hidden className="pointer-events-none absolute -inset-10 -z-10 rounded-[3rem] bg-[radial-gradient(70%_60%_at_65%_25%,rgba(228,190,107,.16),transparent_70%)] blur-[2px]" />
 
       {/* The card, and the reel running under it. */}
-      <div className="relative w-[calc(100%-var(--cm-peek))]">
+      <div className="relative mx-auto w-[calc(100%-var(--cm-peek))]">
         {/* The card as a physical object: a plate with a brass rim, and the shadow it casts. */}
         <div
           aria-hidden
           className="absolute inset-0 rounded-[2rem] border-[3px] border-[var(--accent)]/75 bg-[color:var(--color-ink-950)] shadow-[0_50px_120px_-50px_rgba(0,0,0,1)]"
         />
 
-        {/* The reel: every slide in one strip, masked to the window and the peek beside the card. */}
+        {/* The reel: every slide in one strip, masked to the window and the peeks on both sides. */}
         <div
-          className="absolute inset-y-0 left-0 w-[calc(100%+var(--cm-peek))] overflow-hidden"
+          className="absolute inset-y-0 left-[calc(-1*var(--cm-peek))] w-[calc(100%+2*var(--cm-peek))] overflow-hidden"
           style={{ maskImage: RAIL_MASK, WebkitMaskImage: RAIL_MASK }}
         >
           {items.map((item, position) => {
             const itemPlayable = item.videoUrl ? resolvePlayable(item.videoUrl, item.thumbnail) : null;
-            const state = position === index ? 'current' : position === leaving ? 'leaving' : position === nextIndex ? 'next' : 'rest';
-            // Only the piece on screen and the piece waiting beside it ever mount a player; the
-            // waiting piece is playing before it is needed, which is what removes the pause.
-            const runs = onScreen && !reduced && (state === 'current' || state === 'next');
+            const state = slotFor(position);
+            // Only the piece on screen and the two waiting beside it — previous and next — ever
+            // mount a player, and all three are already playing when an arrow is pressed, which
+            // is what removes the pause.
+            const runs = onScreen && !reduced && (state === 'current' || state === 'next' || state === 'prev');
             const showVideo = runs && Boolean(itemPlayable?.capability.mutedAutoplay && itemPlayable.embedUrl);
             const still = posterFor(item);
             return (
@@ -188,19 +203,12 @@ export function MediaHeroVideo({ items }: { items: MediaItem[] }) {
                 key={item.id}
                 aria-hidden={state !== 'current'}
                 className={cx(
-                  'absolute top-[var(--cm-ring)] bottom-[var(--cm-ring)] left-[var(--cm-ring)] w-[calc(100%-var(--cm-peek)-2*var(--cm-ring))] overflow-hidden rounded-[1.6rem] bg-black will-change-transform',
-                  state === 'current' ? 'z-30' : state === 'leaving' ? 'z-20' : 'z-10',
+                  'absolute top-[var(--cm-ring)] bottom-[var(--cm-ring)] left-[calc(var(--cm-peek)+var(--cm-ring))] w-[calc(100%-2*var(--cm-peek)-2*var(--cm-ring))] overflow-hidden rounded-[1.6rem] bg-black will-change-transform',
+                  SLOT_LAYER[state],
                   state === 'rest' && 'opacity-0',
                   reduced ? 'transition-none' : 'transition-transform duration-[780ms] ease-[cubic-bezier(.22,.68,.24,1)]',
                 )}
-                style={{
-                  transform:
-                    state === 'current'
-                      ? 'translate3d(0,0,0)'
-                      : state === 'leaving'
-                        ? 'translate3d(calc(-100% - var(--cm-gap)),0,0)'
-                        : 'translate3d(calc(100% + var(--cm-gap)),0,0)',
-                }}
+                style={{ transform: SLOT_TRANSFORM[state] }}
               >
                 {still ? (
                   <img src={still} alt="" className="absolute inset-0 size-full object-cover" loading={state === 'current' ? 'eager' : 'lazy'} decoding="async" />
@@ -266,7 +274,7 @@ export function MediaHeroVideo({ items }: { items: MediaItem[] }) {
       </div>
 
       {/* What is playing, and where the card is in the set. */}
-      <div className="mt-5 w-[calc(100%-var(--cm-peek))] text-center">
+      <div className="mx-auto mt-5 w-[calc(100%-2*var(--cm-peek))] text-center">
         <p className="truncate font-display text-[0.9375rem] leading-tight tracking-[-0.015em] text-fg">{active.title}</p>
         <p className="mt-1 font-mono text-[0.5625rem] uppercase tracking-[0.16em] text-fg-dim">
           {[active.kindLabel, active.duration].filter(Boolean).join(' · ')}
