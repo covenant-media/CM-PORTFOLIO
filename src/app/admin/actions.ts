@@ -65,7 +65,16 @@ export async function signInAction(_prev: AdminActionState | null, formData: For
   if (!rate.ok) {
     return { ok: false, message: `Too many attempts. Try again in ${Math.ceil(rate.retryAfterMs / 1000)}s.` };
   }
-  const result = await verifyLogin(email, password);
+  // A database that cannot be reached must not look like a wrong password, and must not throw the
+  // operator onto the site-wide error page: report it on the form, where the fix can be read.
+  const result = await verifyLogin(email, password).catch(() => null);
+  if (!result) {
+    return {
+      ok: false,
+      message:
+        'The CMS database is not reachable. A freshly deployed site needs a hosted PostgreSQL: set DATABASE_URL and DB_DRIVER=postgres in its environment variables.',
+    };
+  }
   await recordAuthAttempt(`login:${ip}`, result.ok, { userAgent: (await headers()).get('user-agent') ?? undefined });
   if (!result.ok || !result.user) {
     return { ok: false, message: result.locked ? 'That account is temporarily locked after repeated failures. Wait a few minutes.' : 'Email or password is incorrect' };

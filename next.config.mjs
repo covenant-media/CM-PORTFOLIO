@@ -17,8 +17,14 @@ const nextConfig = {
   compress: true,
   // This repo can sit under a parent folder that also carries a package-lock.json, and Next then
   // infers that parent as the workspace root — printing the "multiple lockfiles" warning and
-  // resolving chunks from the wrong place. Pin the root to this project.
-  turbopack: { root: import.meta.dirname },
+  // resolving chunks from the wrong place. Pin the root to this project. (`import.meta.dirname`
+  // needs Node 20.11+, so fall back to cwd for an older pinned build image.)
+  turbopack: { root: import.meta.dirname ?? process.cwd() },
+  // `ensureSchema()` reads this file at runtime so a brand-new hosted database migrates itself on
+  // the first request. Next only traces files it can see statically and that path is built at
+  // runtime, so without this the SQL was absent from the server bundle — production then skipped
+  // the migration and every CMS query failed with "relation does not exist".
+  outputFileTracingIncludes: { '/**': ['./src/lib/db/schema.sql'] },
   // PGlite loads its WASM/FS from module-relative paths and pg is a native-ish
   // driver: bundling them breaks file resolution at runtime, so keep both external.
   serverExternalPackages: ['@electric-sql/pglite', 'pg'],

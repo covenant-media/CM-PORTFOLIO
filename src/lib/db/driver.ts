@@ -246,7 +246,18 @@ export function getDriver(): Promise<DbDriver> {
     } else {
       const fs = await import('node:fs/promises');
       const dir = dataDir();
-      await fs.mkdir(dir, { recursive: true });
+      try {
+        await fs.mkdir(dir, { recursive: true });
+      } catch (err) {
+        // The embedded engine needs a real, writable, persistent directory. A serverless host
+        // (Netlify, Vercel, …) gives the function a read-only filesystem, so this is exactly where
+        // a deployment with no database fails — name the fix instead of surfacing a bare EROFS.
+        throw new Error(
+          `The embedded database directory "${dir}" could not be created (${(err as Error).message}). ` +
+            'A serverless host has no writable disk: point the CMS at a hosted PostgreSQL by setting ' +
+            'DATABASE_URL and DB_DRIVER=postgres in the site environment variables.',
+        );
+      }
       instance = await createPgliteDriver(dir);
     }
     return instance;

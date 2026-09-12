@@ -1,6 +1,6 @@
 # Development Status
 
-_Last updated: 2026-09-12 (Database + access round: fixed the Windows path bug in `lib/db/driver.ts` that made CLI scripts open a second PGlite on the live data directory and corrupt it — the cause of `58P01 could not open file "base/5/…"` on sign-in — hardened socket detection with a TCP probe, rebuilt the database, re-created the two owner accounts, removed the credential hint from the sign-in page, fixed the `/icon` 404 and the Turbopack root warning. Tech Portfolio and the main brand site untouched.)_
+_Last updated: 2026-09-12 (Deployment round: made the CMS work on a hosted platform — the schema now ships with the server bundle and self-migrates, a first-owner bootstrap creates the owner from `ADMIN_EMAIL`/`ADMIN_PASSWORD` on an empty database, the driver and `/admin` explain a missing database instead of crashing, and sign-in reports an unreachable database on the form. On top of the Windows PGlite double-writer fix, the rebuilt database, the two owner accounts, the credential-hint removal, the `/icon` fix and the Turbopack root pin. Tech Portfolio and the main brand site untouched.)_
 
 This document describes the current development state of the Covenant Media platform. It distinguishes what is implemented and working, what is in progress or partial, known issues, and remaining work visible from the repository.
 

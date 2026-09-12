@@ -5,37 +5,61 @@
 import { randomUUID } from 'node:crypto';
 import { getDriver, driverKind, type DbDriver, type SqlParam } from './driver';
 import { TABLES, type ColumnSpec, type TableSpec, type TableName } from './tables';
+import { ensureFirstOwner } from '../auth/bootstrap';
 
 export { driverKind };
 
 let schemaReady: Promise<void> | null = null;
+
+/**
+ * The schema SQL, read at runtime so a brand-new database migrates itself on the first request.
+ *
+ * The file is bundled with the server (see `outputFileTracingIncludes` in next.config.mjs), so the
+ * candidates cover a normal checkout, a traced serverless bundle, and a working directory that is
+ * not the repository root.
+ */
+async function readSchemaSql(): Promise<string> {
+  const fs = await import('node:fs/promises');
+  const path = await import('node:path');
+  const candidates: string[] = [
+    path.join(process.cwd(), 'src/lib/db/schema.sql'),
+    path.join(process.cwd(), 'schema.sql'),
+  ];
+  try {
+    const { fileURLToPath } = await import('node:url');
+    candidates.push(path.join(path.dirname(fileURLToPath(import.meta.url)), 'schema.sql'));
+  } catch {
+    /* no import.meta.url in this bundle — the cwd candidates are enough */
+  }
+  for (const file of candidates) {
+    try {
+      return await fs.readFile(file, 'utf8');
+    } catch {
+      /* try the next location */
+    }
+  }
+  return '';
+}
 
 /** Applies schema.sql (idempotent) once per process — keeps dev/demo bootstrapping trivial. */
 export async function ensureSchema(): Promise<void> {
   if (process.env.CM_AUTO_MIGRATE === 'false') return;
   if (!schemaReady) {
     schemaReady = (async () => {
-      const fs = await import('node:fs/promises');
-      const path = await import('node:path');
       const driver = await getDriver();
-      const candidates = [
-        path.join(process.cwd(), 'src/lib/db/schema.sql'),
-        path.join(process.cwd(), 'schema.sql'),
-      ];
-      let sql = '';
-      for (const file of candidates) {
-        try {
-          sql = await fs.readFile(file, 'utf8');
-          break;
-        } catch {
-          /* try next */
-        }
+      const sql = await readSchemaSql();
+      if (sql) {
+        await driver.execMulti(sql);
+      } else {
+        // No SQL means this bundle did not ship it. Say so plainly: the next thing to fail would
+        // otherwise read as "relation does not exist" with no hint of the cause.
+        console.warn('[db] schema.sql was not found in this deployment — assuming the schema already exists.');
       }
-      if (!sql) {
-        // Production image without the source file present: assume migrations were run.
-        return;
-      }
-      await driver.execMulti(sql);
+      // A hosted database starts empty, so create the first owner from ADMIN_EMAIL / ADMIN_PASSWORD
+      // once (no-op when an account already exists), or a fresh deploy can never be signed into.
+      await ensureFirstOwner(driver).catch((err) => {
+        console.warn('[db] first-owner bootstrap skipped:', (err as Error).message?.slice(0, 160));
+      });
     })().catch((err) => {
       schemaReady = null;
       throw err;

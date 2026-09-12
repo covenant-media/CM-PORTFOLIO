@@ -98,6 +98,28 @@ On a brand-new database the seed creates one owner: `covenant@example.test` /
 seed only runs that block when the account table is empty. The sign-in page never displays any
 credentials.
 
+## Deploying
+
+The CMS reads and writes a real database, so a deployment needs one. Locally `npm run dev` boots an
+embedded PostgreSQL (PGlite) that writes into `.cm-data/` on your machine — that **cannot** run on a
+serverless host, whose filesystem is read-only and whose storage does not persist between requests.
+Without a database the public pages still render (their loaders fall back to built-in content) but
+`/admin` cannot, because reading and writing that data is exactly what it does.
+
+1. Create a PostgreSQL database (Netlify DB, Neon, Supabase, Railway, RDS…).
+2. Set these environment variables on the host:
+   - `DATABASE_URL` — the connection string (add `?sslmode=require` if the provider asks for it)
+   - `DB_DRIVER=postgres`
+   - `AUTH_SECRET` — 64+ random characters
+   - `ADMIN_EMAIL` / `ADMIN_PASSWORD` — used **once**, to create the first owner on an empty database.
+     Nothing happens while an account exists, so they can stay in place.
+3. Deploy. The schema applies itself on the first request (`ensureSchema`), so there is no manual
+   migration step.
+4. Open `/admin`, sign in, then change the password under **Account**.
+
+If `/admin` shows a database error, that page names the missing variable set — the usual cause is
+`DATABASE_URL` not being set on the host.
+
 ## Uploads in production
 
 The local storage driver writes to `public/uploads` and the app serves those bytes itself through
