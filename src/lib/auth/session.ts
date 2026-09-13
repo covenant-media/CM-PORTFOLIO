@@ -46,11 +46,34 @@ export interface AdminContext {
   csrfToken: string;
 }
 
+/**
+ * Session cookie attributes.
+ *
+ * `SameSite=Lax` is the right default for a site opened on its own domain, and it stays
+ * the default here. But a Lax cookie is only sent on *top-level* navigations, and the CMS
+ * is not always top-level: opened inside another site's frame — which is exactly what the
+ * sandbox preview is, an iframe on a different domain — the browser treats the cookie as
+ * third-party and withholds it from the router's fetches. Signing in then appears to work
+ * (the redirect after a POST is a real navigation, so the cookie goes along), and every
+ * click afterwards bounces to /admin/login, because each navigation arrives with no
+ * session cookie at all.
+ *
+ * `None` is the only value that travels in a cross-site frame, and it requires `Secure`,
+ * which requires HTTPS. All three are therefore switched on together, and only where the
+ * app really is served that way: the embedded preview (E2B_SANDBOX_ID) or an operator who
+ * has asked for it with COOKIE_SAMESITE=none. A plain http:// development server keeps
+ * Lax, and so does production on its own domain.
+ *
+ * Dropping the SameSite defence does not drop CSRF protection: every mutation in this app
+ * carries a double-submit token that `assertCsrf` checks regardless of the cookie.
+ */
 function cookieOptions(maxAgeSeconds: number) {
-  const secure = process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production';
+  const requested = (process.env.COOKIE_SAMESITE ?? '').trim().toLowerCase();
+  const embedded = requested === 'none' || Boolean(process.env.E2B_SANDBOX_ID);
+  const secure = embedded || process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production';
   return {
     httpOnly: true,
-    sameSite: 'lax' as const,
+    sameSite: (embedded ? 'none' : 'lax') as 'none' | 'lax',
     secure,
     path: '/',
     maxAge: maxAgeSeconds,
