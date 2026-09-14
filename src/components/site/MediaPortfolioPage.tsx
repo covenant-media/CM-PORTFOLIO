@@ -11,10 +11,13 @@
  * media surface is modified, and the one shared component it needs a variation of
  * (`forms/PublicForm`) is wrapped rather than edited.
  *
- * **Data.** Everything rendered here comes from `src/lib/media/sample-portfolio.ts`, which
- * mirrors the CMS columns (`project`, `media_video`, `media_asset`, `testimonial`,
- * `pricing_package`). Swapping those arrays for database loaders is a change to that file
- * only. See the header of that module for exactly what is real and what is simulated.
+ * **Data.** The work rails — the hero card, long-form, short-form, the photography wall and the
+ * client stories written against individual pieces — come from the CMS (`src/lib/media/portfolio.ts`,
+ * which reads `media_video`, `gallery` and their assets). Each rail falls back to the studio's
+ * written set in `src/lib/media/sample-portfolio.ts` only while that rail is empty, and the
+ * fallback rows carry `is_sample`, which is what puts a Placeholder badge on them. Hero copy,
+ * capabilities and the Biography read their settings (`media.hero_*`, `media.capabilities`,
+ * `founder.bio_paragraphs`) with the same written fallback.
  */
 import { Section, SectionHeader, Eyebrow } from '@/components/ui/Section';
 import { Button } from '@/components/ui/Button';
@@ -36,8 +39,6 @@ import { FORM_CONFIGS } from '@/lib/cms/forms';
 import { issueFormToken } from '@/lib/security/forms';
 import { assetsByIds, contactDetails, siteContext, testimonialsFor } from '@/lib/cms/content';
 import {
-  LONG_FORM_ITEMS,
-  MEDIA_CAPABILITIES,
   MEDIA_PROCESS,
   MEDIA_ROLES,
   MEDIA_SERVICES,
@@ -45,11 +46,9 @@ import {
   MEDIA_TOOLS,
   MEDIA_STUDIO,
   MEDIA_TESTIMONIALS,
-  PHOTO_ITEMS,
-  SHORT_FORM_ITEMS,
-  type MediaItem,
   type MediaTestimonial,
 } from '@/lib/media/sample-portfolio';
+import { biographyParagraphs, capabilityList, mediaRails, mediaVideoStories } from '@/lib/media/portfolio';
 import type { SocialItem } from '@/lib/types/content';
 
 export const revalidate = 60;
@@ -65,36 +64,22 @@ const ANCHORS: MediaAnchor[] = [
 ];
 
 /**
- * The pieces the hero card cycles through.
- *
- * The hero presents vertical work, so the set is the short-form library ordered for the card
- * rather than the rail: the wedding highlight opens because it is the strongest piece, and the
- * rest rotate after it. Held as its own list so re-ordering the hero never touches the rail.
+ * The studio's written biography — the fallback for the About section while
+ * `founder.bio_paragraphs` is empty. One entry per paragraph.
  */
-const HERO_SHORT_ITEMS: MediaItem[] = [
-  SHORT_FORM_ITEMS[3]!,
-  SHORT_FORM_ITEMS[0]!,
-  SHORT_FORM_ITEMS[2]!,
-  SHORT_FORM_ITEMS[1]!,
-  SHORT_FORM_ITEMS[4]!,
-];
-
-const CAPABILITIES = [
-  'Videography',
-  'Video editing',
-  'Live streaming',
-  'Motion graphics',
-  'Cinematography',
-  'Photography',
-  'Colour grading',
-  'Social media content',
+const BIOGRAPHY = [
+  'I am {founder}, founder of {brand}. I direct, shoot and edit, which means the person who plans your project is the person on set and the person in the edit. Nothing important gets handed between departments, because there are no departments.',
+  'The studio grew out of the work rather than the other way round. It began with filming services and events for people who needed the day kept properly, then being asked to cut it afterwards. Coverage became editing, editing became colour and finishing, and live streaming followed because clients needed the room to reach people who could not be in it.',
+  'That is still how the studio runs. Conferences, conventions, ceremonies, campaigns and brand productions, planned in pre-production, captured on the day and finished in post, with one standard from the first brief to the final file.',
 ];
 
 export default async function MediaPortfolioPage() {
-  const [ctx, contact, testimonials] = await Promise.all([
+  const [ctx, contact, testimonials, rails, videoStories] = await Promise.all([
     siteContext(),
     contactDetails(),
     testimonialsFor('media', 6).catch(() => []),
+    mediaRails(),
+    mediaVideoStories().catch(() => []),
   ]);
 
   const settings = ctx.settings;
@@ -127,10 +112,29 @@ export default async function MediaPortfolioPage() {
     availability: contact.availability ?? MEDIA_STUDIO.availability,
   };
   const telHref = (contact.telHref as string) ?? `tel:${studio.phone.replace(/[^\d+]/g, '')}`;
+
+  /**
+   * Hero copy: the CMS fields when the owner has written them, otherwise the studio's own words.
+   * `media.hero_eyebrow`, `media.hero_intro` and `media.capabilities` are edited on the Media
+   * portfolio hub, and every one of them is optional — an empty field simply keeps the copy that
+   * ships with the page rather than emptying the hero.
+   */
+  const eyebrow = String(settings['media.hero_eyebrow'] ?? '').trim() || "Hello, I'm";
+  const heroIntro =
+    String(settings['media.hero_intro'] ?? '').trim() ||
+    'Covenant Media produces films, photography and live streams for brands, events and creators. I take a project from the first conversation through production, editing, colour and finishing, and hand over work that is ready to publish.';
+  const capabilities = capabilityList(settings['media.capabilities']);
+  /** About the studio: the biography under the portrait, one paragraph per line. */
+  const biography = biographyParagraphs(settings['founder.bio_paragraphs'], BIOGRAPHY);
   const mailHref = `mailto:${studio.email}`;
   const whatsappHref = studio.whatsapp.includes('?') ? studio.whatsapp : `${studio.whatsapp}?text=${encodeURIComponent('Hello Covenant, I would like to discuss a shoot.')}`;
 
-  // Approved CMS testimonials come first; the written set follows until they are replaced.
+  /**
+   * Client stories: approved testimonials first, then the stories written against individual
+   * videos (the Client stories board on the media hub), then the studio's written set until real
+   * ones replace it. Every entry carries its own `isSample`, so a placeholder is always labelled
+   * as one. A video story only exists where the owner typed a real quote.
+   */
   const clientStories: MediaTestimonial[] = [
     ...testimonials.map((item) => ({
       id: item.id,
@@ -139,6 +143,7 @@ export default async function MediaPortfolioPage() {
       context: [item.authorRole, item.authorOrg].filter(Boolean).join(', '),
       isSample: item.isSample,
     })),
+    ...videoStories,
     ...MEDIA_TESTIMONIALS,
   ].slice(0, 8);
 
@@ -265,7 +270,7 @@ export default async function MediaPortfolioPage() {
                     the wordmark uses, so the hero and the mark read as one brand. */}
                 <FadeIn>
                   <p className="text-center font-mono text-[0.75rem] uppercase tracking-[0.28em] text-fg-muted md:text-[0.8125rem] lg:text-left">
-                    Hello, I&apos;m
+                    {eyebrow}
                   </p>
                 </FadeIn>
 
@@ -295,8 +300,7 @@ export default async function MediaPortfolioPage() {
 
                 <FadeIn delay={300}>
                   <p className="lede mx-auto mt-6 max-w-xl text-justify text-[1.0625rem] lg:mx-0 lg:max-w-xl lg:text-left">
-                    Covenant Media produces films, photography and live streams for brands, events and creators. I take a project from the
-                    first conversation through production, editing, colour and finishing, and hand over work that is ready to publish.
+                    {heroIntro}
                   </p>
                 </FadeIn>
 
@@ -320,7 +324,7 @@ export default async function MediaPortfolioPage() {
 
               {/* ── video side ── */}
               <FadeIn delay={240} y={20} className="min-w-0">
-                <MediaHeroVideo items={HERO_SHORT_ITEMS} />
+                <MediaHeroVideo items={rails.hero} />
               </FadeIn>
             </div>
 
@@ -330,7 +334,7 @@ export default async function MediaPortfolioPage() {
             {/* ── capability list ── */}
             <FadeIn delay={120}>
               <ul className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2.5 border-t border-[rgba(243,241,236,.08)] pt-6 lg:justify-start">
-                {MEDIA_CAPABILITIES.map((fact) => (
+                {capabilities.slice(0, 8).map((fact) => (
                   <li key={fact} className="flex items-center gap-2 text-[0.8125rem] text-fg-muted">
                     <span aria-hidden className="size-1 rounded-full bg-[var(--accent)]" />
                     {fact}
@@ -349,7 +353,7 @@ export default async function MediaPortfolioPage() {
               title="Films that carry the whole story"
               lede="Campaign films, conference coverage and full event highlights, from the first brief to the finished master. Select any piece to watch it in full."
             />
-            <MediaLongFormRows items={LONG_FORM_ITEMS} more={{ href: '/media/long-form', label: 'View Catalog' }} />
+            <MediaLongFormRows items={rails.long} more={{ href: '/media/long-form', label: 'View Catalog' }} />
           </div>
         </Section>
 
@@ -361,7 +365,7 @@ export default async function MediaPortfolioPage() {
               title="Built for the scroll"
               lede="Vertical edits that hold attention on TikTok, Reels and Shorts. Hooks in the first second, captions burned in, and cuts that land on the beat."
             />
-            <MediaShortFormRail items={SHORT_FORM_ITEMS} more={{ href: '/media/short-form', label: 'View Catalog' }} />
+            <MediaShortFormRail items={rails.short} more={{ href: '/media/short-form', label: 'View Catalog' }} />
           </div>
         </Section>
 
@@ -373,7 +377,7 @@ export default async function MediaPortfolioPage() {
               title="Stills from the same storytelling"
               lede="Conferences, ceremonies and campaign days photographed alongside the films, so your print, web and social imagery all come from one look."
             />
-            <MediaPhotoWall items={PHOTO_ITEMS} more={{ href: '/media/photography', label: 'View Catalog' }} />
+            <MediaPhotoWall items={rails.photos} more={{ href: '/media/photography', label: 'View Catalog' }} />
           </div>
         </Section>
 
@@ -522,20 +526,11 @@ export default async function MediaPortfolioPage() {
               <div className="order-3 mt-10 lg:col-span-7 lg:row-start-2 lg:mt-9">
                 <FadeIn delay={60}>
                   <div className="space-y-4 text-[0.9375rem] leading-relaxed text-fg-muted">
-                    <p>
-                      I am {founderName}, founder of {brandName}. I direct, shoot and edit, which means the person who plans your project is
-                      the person on set and the person in the edit. Nothing important gets handed between departments, because there are no
-                      departments.
-                    </p>
-                    <p>
-                      The studio grew out of the work rather than the other way round. It began with filming services and events for people
-                      who needed the day kept properly, then being asked to cut it afterwards. Coverage became editing, editing became colour
-                      and finishing, and live streaming followed because clients needed the room to reach people who could not be in it.
-                    </p>
-                    <p>
-                      That is still how the studio runs. Conferences, conventions, ceremonies, campaigns and brand productions, planned in
-                      pre-production, captured on the day and finished in post, with one standard from the first brief to the final file.
-                    </p>
+                    {biography.map((paragraph, index) => (
+                      <p key={index}>
+                        {paragraph.replaceAll('{founder}', founderName).replaceAll('{brand}', brandName)}
+                      </p>
+                    ))}
                   </div>
                 </FadeIn>
               </div>
@@ -544,7 +539,7 @@ export default async function MediaPortfolioPage() {
               <div className="order-4 mt-9 lg:col-span-7 lg:row-start-3 lg:mt-10">
                 <FadeIn delay={100}>
                   <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-4 border border-[rgba(243,241,236,.08)] bg-[rgba(243,241,236,.06)]">
-                    {CAPABILITIES.map((item) => (
+                    {capabilities.map((item) => (
                       <li key={item} className="flex items-center gap-3 bg-[color:var(--color-ink-950)] px-4 py-4">
                         <span aria-hidden className="grid size-6 shrink-0 place-items-center rounded-full border border-[var(--accent)]/35 text-[var(--accent)]">
                           <Icon name="check" size={11} />

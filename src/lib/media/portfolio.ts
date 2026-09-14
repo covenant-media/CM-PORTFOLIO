@@ -22,7 +22,15 @@ import { MEDIA_CATEGORIES } from '../cms/options';
 import { deriveStory } from './story';
 import { humanize } from '../utils/text';
 import { detectVideoSource } from './video';
-import type { MediaFormat, MediaItem, MediaTestimonial } from './sample-portfolio';
+import {
+  LONG_FORM_ITEMS,
+  MEDIA_CAPABILITIES,
+  PHOTO_ITEMS,
+  SHORT_FORM_ITEMS,
+  type MediaFormat,
+  type MediaItem,
+  type MediaTestimonial,
+} from './sample-portfolio';
 
 export interface MediaVideoRow {
   id: string;
@@ -329,4 +337,70 @@ export async function mediaVideoStories(): Promise<MediaTestimonial[]> {
       } satisfies MediaTestimonial,
     ];
   });
+}
+
+/* ── the page's content, CMS first ───────────────────────────────────────────
+ *
+ * The media surface renders exactly one of two things per rail: the rows the owner has
+ * published in the CMS, or — only while that rail is empty — the studio's written set, which
+ * carries the `is_sample` flags that put a Placeholder badge on every card. The two are never
+ * mixed, so a real piece can never sit beside simulated copy pretending to be the same thing.
+ */
+
+export interface MediaRails {
+  hero: MediaItem[];
+  long: MediaItem[];
+  short: MediaItem[];
+  photos: MediaItem[];
+  /** Rail name → where its rows came from, for the CMS and for debugging a quiet page. */
+  source: { hero: 'cms' | 'sample'; long: 'cms' | 'sample'; short: 'cms' | 'sample'; photos: 'cms' | 'sample' };
+}
+
+/**
+ * The hero rail when the owner has not toggled anything on: the studio's own published order for
+ * the card, which is the short-form library re-ordered rather than the rail's order.
+ */
+function sampleHero(): MediaItem[] {
+  const order = [3, 0, 2, 1, 4];
+  const picks = order.map((index) => SHORT_FORM_ITEMS[index]).filter((item): item is MediaItem => Boolean(item));
+  return picks.length ? picks : SHORT_FORM_ITEMS.slice(0, 5);
+}
+
+export async function mediaRails(): Promise<MediaRails> {
+  const [hero, long, short, photos] = await Promise.all([
+    mediaHeroItems(6).catch(() => []),
+    mediaVideoItems({ format: 'long' }).catch(() => []),
+    mediaVideoItems({ format: 'short' }).catch(() => []),
+    mediaPhotoItems().catch(() => []),
+  ]);
+  return {
+    hero: hero.length ? hero : sampleHero(),
+    long: long.length ? long : LONG_FORM_ITEMS,
+    short: short.length ? short : SHORT_FORM_ITEMS,
+    photos: photos.length ? photos : PHOTO_ITEMS,
+    source: {
+      hero: hero.length ? 'cms' : 'sample',
+      long: long.length ? 'cms' : 'sample',
+      short: short.length ? 'cms' : 'sample',
+      photos: photos.length ? 'cms' : 'sample',
+    },
+  };
+}
+
+/** `media.capabilities` — one capability per line, falling back to the written eight. */
+export function capabilityList(value: unknown): string[] {
+  const lines = String(value ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return lines.length ? lines : MEDIA_CAPABILITIES;
+}
+
+/** `founder.bio_paragraphs` — one paragraph per line, falling back to the written biography. */
+export function biographyParagraphs(value: unknown, fallback: string[]): string[] {
+  const lines = String(value ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return lines.length ? lines : fallback;
 }

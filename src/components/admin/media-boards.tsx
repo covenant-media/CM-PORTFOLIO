@@ -9,7 +9,7 @@
  * submit still goes through the server actions, so permissions, CSRF, validation, audit and
  * cache revalidation are unchanged.
  */
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
 import { saveSettingsFormAction, saveVideoStoryAction } from '@/app/admin/actions';
@@ -192,7 +192,7 @@ export function HeroBoard({
 
 const KIND_OPTIONS = STORY_KINDS.map((option) => ({ value: option.value, label: option.label }));
 
-export function StoryBoard({ rows, canWrite }: { rows: MediaVideoBoardRow[]; canWrite: boolean }) {
+export function StoryBoard({ rows, canWrite, returnTo }: { rows: MediaVideoBoardRow[]; canWrite: boolean; returnTo: string }) {
   const withStories = rows.filter((row) => (row.storyQuote ?? '').trim().length > 0);
   const candidates = rows.filter((row) => (row.storyQuote ?? '').trim().length === 0);
   return (
@@ -217,19 +217,19 @@ export function StoryBoard({ rows, canWrite }: { rows: MediaVideoBoardRow[]; can
           <li className="py-3 text-[12.5px] text-fg-dim">No videos yet — add one under Videos first.</li>
         ) : null}
         {rows.map((row) => (
-          <StoryRow key={row.id} row={row} canWrite={canWrite} />
+          <StoryRow key={row.id} row={row} canWrite={canWrite} returnTo={returnTo} />
         ))}
       </ul>
     </Panel>
   );
 }
 
-function StoryRow({ row, canWrite }: { row: MediaVideoBoardRow; canWrite: boolean }) {
+function StoryRow({ row, canWrite, returnTo }: { row: MediaVideoBoardRow; canWrite: boolean; returnTo: string }) {
   const [client, setClient] = useState(row.storyClient ?? '');
   const [kind, setKind] = useState(row.storyKind ?? '');
   const [quote, setQuote] = useState(row.storyQuote ?? '');
-  // Bound to the row so the form works as a plain POST as well as with JavaScript.
-  const [state, save] = useActionState(saveVideoStoryAction.bind(null, row.id), null);
+  // Bound to the row, so the form posts the right video and still works without JavaScript.
+  const save = saveVideoStoryAction.bind(null, row.id);
   const preview = deriveStory({ title: row.title, client: row.client, storyClient: client, storyKind: kind });
   const written = quote.trim().length > 0;
 
@@ -254,6 +254,7 @@ function StoryRow({ row, canWrite }: { row: MediaVideoBoardRow; canWrite: boolea
       {canWrite ? (
         <form action={save} className="mt-3 grid gap-2.5 sm:grid-cols-2">
           <CsrfInput />
+          <input type="hidden" name="_return" value={returnTo} />
           <Field
             label="Client name (optional)"
             name="story_client"
@@ -295,11 +296,7 @@ function StoryRow({ row, canWrite }: { row: MediaVideoBoardRow; canWrite: boolea
             >
               <Icon name="check" size={12} /> Save story
             </button>
-            {state ? (
-              <span className={cx('text-[11.5px]', state.ok ? 'text-ok-400' : 'text-alert-400')}>
-                {state.message ?? (state.ok ? 'Client story saved' : 'Could not save')}
-              </span>
-            ) : null}
+            <span className="text-[11.5px] text-fg-dim">Saving returns to this board with the result.</span>
           </div>
         </form>
       ) : (

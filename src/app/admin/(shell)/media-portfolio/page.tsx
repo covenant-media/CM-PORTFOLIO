@@ -73,7 +73,7 @@ export default async function MediaPortfolioHub({ searchParams }: { searchParams
       <HeroBoard copy={heroCopy} items={videos} canWrite={canWrite} returnTo="/admin/media-portfolio" />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-        <StoryBoard rows={videos} canWrite={canWrite} />
+        <StoryBoard rows={videos} canWrite={canWrite} returnTo="/admin/media-portfolio" />
         <PhotographyBoard canWrite={canWrite} sets={photoSets} />
       </div>
 

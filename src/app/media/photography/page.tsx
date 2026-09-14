@@ -6,7 +6,7 @@
  */
 import { MediaCatalogScreen } from '@/components/site/MediaCatalogScreen';
 import { pageMetadata } from '@/lib/seo/page';
-import { PHOTO_ITEMS } from '@/lib/media/sample-portfolio';
+import { mediaRails } from '@/lib/media/portfolio';
 
 export const revalidate = 60;
 
@@ -19,14 +19,16 @@ export function generateMetadata() {
   });
 }
 
-export default function Page() {
+export default async function Page() {
+  const rails = await mediaRails();
+
   return (
     <MediaCatalogScreen
       format="photo"
       eyebrow="Catalog"
       title="Event photography"
       lede="Conferences, ceremonies and campaign days photographed alongside the films, so your print, web and social imagery all carry one look."
-      items={PHOTO_ITEMS}
+      items={rails.photos}
     />
   );
 }

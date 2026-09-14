@@ -6,7 +6,7 @@
  */
 import { MediaCatalogScreen } from '@/components/site/MediaCatalogScreen';
 import { pageMetadata } from '@/lib/seo/page';
-import { SHORT_FORM_ITEMS } from '@/lib/media/sample-portfolio';
+import { mediaRails } from '@/lib/media/portfolio';
 
 export const revalidate = 60;
 
@@ -19,14 +19,16 @@ export function generateMetadata() {
   });
 }
 
-export default function Page() {
+export default async function Page() {
+  const rails = await mediaRails();
+
   return (
     <MediaCatalogScreen
       format="short"
       eyebrow="Catalog"
       title="Short-form work"
       lede="Vertical edits built for TikTok, Reels and Shorts: hooks in the first second, captions burned in and cuts that land on the beat."
-      items={SHORT_FORM_ITEMS}
+      items={rails.short}
     />
   );
 }

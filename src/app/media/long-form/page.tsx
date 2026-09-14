@@ -7,7 +7,7 @@
  */
 import { MediaCatalogScreen } from '@/components/site/MediaCatalogScreen';
 import { pageMetadata } from '@/lib/seo/page';
-import { LONG_FORM_ITEMS } from '@/lib/media/sample-portfolio';
+import { mediaRails } from '@/lib/media/portfolio';
 
 export const revalidate = 60;
 
@@ -20,14 +20,16 @@ export function generateMetadata() {
   });
 }
 
-export default function Page() {
+export default async function Page() {
+  const rails = await mediaRails();
+
   return (
     <MediaCatalogScreen
       format="long"
       eyebrow="Catalog"
       title="Long-form work"
       lede="Campaign films, conference coverage, ceremony highlights and full productions. Select any piece to read what it covers and watch it in full."
-      items={LONG_FORM_ITEMS}
+      items={rails.long}
     />
   );
 }

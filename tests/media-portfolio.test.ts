@@ -308,8 +308,9 @@ test('no persistent floating buttons remain on the media surface', () => {
 
 test('the hero is a two-column composition with the video card and the social row in it', () => {
   assert.match(MEDIA_PAGE, /lg:grid-cols-\[minmax\(0,1\.06fr\)/, 'the hero text column keeps the larger share');
-  assert.match(MEDIA_PAGE, /<MediaHeroVideo items=\{HERO_SHORT_ITEMS\} \/>/, 'the hero card is placed in the hero and runs the vertical set');
-  assert.match(MEDIA_PAGE, /Hello, I&#x27;m|Hello, I&apos;m/, 'the greeting eyebrow opens the hero');
+  assert.match(MEDIA_PAGE, /<MediaHeroVideo items=\{rails\.hero\} \/>/, 'the hero card runs the CMS hero set, which falls back to the vertical library');
+  assert.match(MEDIA_PAGE, /\{eyebrow\}/, 'the greeting eyebrow opens the hero');
+  assert.match(MEDIA_PAGE, /\|\| "Hello, I'm"/, 'the eyebrow keeps a written fallback for an empty setting');
   assert.match(MEDIA_PAGE, /<MediaSocialButtons \/>/, 'the social row is placed under the calls to action');
   assert.match(MEDIA_PAGE, /<MediaRoleLine[\s\S]*?prefix="A"/, 'the role line takes a static article');
   assert.match(MEDIA_PAGE, /\/media\/long-form[\s\S]*?\/media\/short-form[\s\S]*?\/media\/photography/, 'each work section links to its catalog');
@@ -534,11 +535,15 @@ test('the About column reads in the owner\'s order and the credit sits under the
   assert.ok(positions.every((value) => value >= 0), 'the About blocks are all present');
   assert.ok(positions[0]! < positions[1]! && positions[1]! < positions[2]!, 'eyebrow, heading, then the statement');
   // The biography comes before the services card, which comes before the statement and the actions.
-  const bio = about.indexOf('I am {founderName}');
-  const card = about.indexOf('{CAPABILITIES.map');
+  // Both read the CMS with the studio's written set as the fallback, so the page is never empty
+  // and the two lists can never disagree.
+  const bio = about.indexOf('{biography.map');
+  const card = about.indexOf('{capabilities.map');
   const statement = about.indexOf('MEDIA_STUDIO.statement');
   const actions = about.indexOf('Work with the Studio');
   assert.ok(bio > 0 && card > bio && statement > card && actions > statement, 'the left column follows the brief');
+  assert.match(MEDIA_PAGE, /founder\.bio_paragraphs/, 'the biography reads the CMS setting');
+  assert.match(MEDIA_PAGE, /media\.capabilities/, 'the capability list reads the CMS setting');
   // The credit is outside the picture, in the brand white, and the name inside keeps the logo split.
   const figure = about.slice(about.indexOf('<figure'), about.indexOf('</figure>'));
   assert.match(figure, /<\/div>[\s\S]{0,260}?<figcaption/, 'the credit sits under the frame, not over the picture');

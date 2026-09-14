@@ -380,32 +380,30 @@ export async function rowAction(formData: FormData): Promise<AdminActionState> {
  * caches exactly like every other CMS write.
  */
 /**
- * The client-story editor on the media hub. `_prev` and the bound `id` keep the same signature
- * `useActionState` expects, which also means the form survives without JavaScript: the bound id
- * travels in the markup.
+ * The client-story editor on the media hub. The id is bound into the form, so the whole form is a
+ * server-action reference and works without JavaScript; the redirect keeps the round trip to a
+ * single 303 instead of re-rendering the hub inside the action response.
  */
-export async function saveVideoStoryAction(id: string, _prev: AdminActionState | null, formData: FormData): Promise<AdminActionState> {
+export async function saveVideoStoryAction(id: string, formData: FormData): Promise<void> {
+  const back = String(formData.get('_return') ?? '') || '/admin/media-portfolio';
+  const target = SAFE_NEXT.test(back) ? back : '/admin/media-portfolio';
   try {
     const ctx = await requirePermission('videos', 'write');
     await assertCsrf(csrfOf(formData));
     if (!id) throw new ApiError(400, 'Missing video');
-    const fields: [string, string][] = [
-      ['story_client', 'story_client'],
-      ['story_kind', 'story_kind'],
-      ['story_quote', 'story_quote'],
-    ];
-    const written: string[] = [];
-    for (const [field, key] of fields) {
+    const fields = ['story_client', 'story_kind', 'story_quote'] as const;
+    let written = 0;
+    for (const key of fields) {
       if (!formData.has(key)) continue;
-      const value = String(formData.get(field) ?? '').trim();
-      await repo.setField('videos', id, key, value, ctx);
-      written.push(key);
+      await repo.setField('videos', id, key, String(formData.get(key) ?? '').trim(), ctx);
+      written += 1;
     }
-    if (!written.length) return { ok: false, message: 'Nothing to save' };
-    return { ok: true, message: 'Client story saved' };
+    if (!written) throw new ApiError(400, 'Nothing to save');
   } catch (err) {
-    return state(err);
+    const result = failure(err);
+    redirect(`${target}?error=1&message=${encodeURIComponent(result.message ?? 'Could not save that story')}`);
   }
+  redirect(`${target}?saved=1`);
 }
 
 /** Ordered id list from the reorder UI (navigation, galleries, services…). */

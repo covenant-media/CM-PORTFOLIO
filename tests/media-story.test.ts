@@ -69,3 +69,20 @@ test('detection reads the description too, not just the title', () => {
   assert.equal(deriveStory({ title: 'A short film', description: 'Shot at a school graduation in Uyo.' }).context, 'School event');
   assert.equal(deriveStory({ title: 'A short film', description: 'Shot at a school graduation in Uyo.' }).author, 'School client');
 });
+
+test('the page copy falls back to the studio’s own words field by field', async () => {
+  const { biographyParagraphs, capabilityList } = await import('../src/lib/media/portfolio');
+  const { MEDIA_CAPABILITIES } = await import('../src/lib/media/sample-portfolio');
+  const written = [...MEDIA_CAPABILITIES];
+
+  // Nothing saved yet → the written set, so the page is never empty.
+  assert.deepEqual(capabilityList(''), written);
+  assert.deepEqual(capabilityList(null), written);
+  // Saved in the CMS → exactly the lines the owner typed, trimmed and blank-free.
+  assert.deepEqual(capabilityList('Weddings\n  Brand films \n\nLive streaming'), ['Weddings', 'Brand films', 'Live streaming']);
+
+  const fallback = ['First paragraph.', 'Second paragraph.'];
+  assert.deepEqual(biographyParagraphs(undefined, fallback), fallback);
+  assert.deepEqual(biographyParagraphs('\n', fallback), fallback);
+  assert.deepEqual(biographyParagraphs('One.\nTwo.\nThree.', fallback), ['One.', 'Two.', 'Three.']);
+});

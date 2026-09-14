@@ -291,7 +291,9 @@ export async function updateRow(
   for (const [key, col] of Object.entries(spec.columns)) {
     if (!(key in data)) continue;
     if (col.writable === false) continue;
-    const coerced = isEmpty(data[key]) && col.nullable ? null : coerceForDb(col, data[key]);
+    // An empty value on a nullable column means NULL, not "leave what is there" — otherwise no
+    // field could ever be cleared from the CMS (clearing the client name, the bio, the poster…).
+    const coerced = isEmpty(data[key]) && col.nullable ? { sql: 'NULL', param: null } : coerceForDb(col, data[key]);
     if (!coerced) continue;
     if (coerced.sql === 'NULL') {
       sets.push(`${quote(key)} = NULL`);

@@ -120,3 +120,17 @@ test('grouping keeps the sidebar and the main column consistent', () => {
   assert.deepEqual(fieldsForGroup(fields, undefined).map((f) => f.key), ['a']);
   assert.deepEqual(fieldsForGroup(fields, 'seo').map((f) => f.key), ['b', 'c']);
 });
+
+test('clearing a field is a write, not a no-op', async () => {
+  // `validateFields` turns a blank into the field's default (null for an optional column), so the
+  // repository hands `updateRow` an explicit empty value. That value has to reach the database as
+  // NULL: the client name, the biography, the poster and every other optional field must be
+  // clearable from the CMS. This is a source contract because proving it needs a live database.
+  const source = await (await import('node:fs/promises')).readFile(
+    new URL('../src/lib/db/index.ts', import.meta.url),
+    'utf8',
+  );
+  const writer = source.slice(source.indexOf('export async function updateRow'));
+  assert.match(writer, /isEmpty\(data\[key\]\) && col\.nullable \? \{ sql: 'NULL', param: null \} : coerceForDb/, 'an emptied nullable column is written as NULL');
+  assert.match(writer, /if \(coerced\.sql === 'NULL'\)/, 'the NULL branch is what emits the SET');
+});
