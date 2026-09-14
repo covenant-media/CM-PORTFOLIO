@@ -15,8 +15,10 @@
 import { CountUp, FadeIn } from '@/components/ui/Motion';
 import { MEDIA_STATS } from '@/lib/media/sample-portfolio';
 
-export function MediaStats({ className }: { className?: string }) {
-  if (!MEDIA_STATS.length) return null;
+export function MediaStats({ className, stats }: { className?: string; stats?: { label: string; value: number; suffix: string }[] }) {
+  // The CMS figures when the owner has set them, the studio's published ones otherwise.
+  const rows = stats?.length ? stats : MEDIA_STATS;
+  if (!rows.length) return null;
 
   return (
     <FadeIn delay={80} className={className}>
@@ -24,7 +26,7 @@ export function MediaStats({ className }: { className?: string }) {
         aria-label="Covenant Media at a glance"
         className="grid grid-cols-2 gap-px overflow-hidden rounded-4 border border-[rgba(243,241,236,.09)] bg-[rgba(243,241,236,.07)] md:grid-cols-4"
       >
-        {MEDIA_STATS.map((stat) => (
+        {rows.map((stat) => (
           <div key={stat.label} className="group/stat relative bg-[color:var(--color-ink-950)] px-5 py-4 text-center transition-colors duration-500 hover:bg-[color:var(--color-ink-900)] sm:py-6 md:px-6 md:text-left">
             <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)]/50 to-transparent opacity-0 transition-opacity duration-500 group-hover/stat:opacity-100 md:inset-x-6" />
             <dd className="flex items-baseline justify-center font-display text-[1.65rem] font-light leading-none tracking-[-0.035em] sm:text-[clamp(1.9rem,3.4vw,2.5rem)] md:justify-start">

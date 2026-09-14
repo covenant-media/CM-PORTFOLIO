@@ -78,6 +78,7 @@ export const SETTINGS_SCHEMA: SettingDef[] = [
   { key: 'tech.github_username', label: 'GitHub username', type: 'text', group: 'tech', default: '', is_public: true, sort_order: 3, help: 'Used for profile links. Repository data is only shown when fetched successfully.' },
   { key: 'tech.open_to', label: 'Open-to note', type: 'textarea', group: 'tech', default: '', rows: 2, is_public: true, sort_order: 4 },
   { key: 'tech.pricing_note', label: 'Pricing note', type: 'text', group: 'tech', default: 'Scoped per engagement — request a quote.', is_public: true, sort_order: 5 },
+  { key: 'tech.hero_stats', label: 'Hero figures', type: 'textarea', group: 'tech', default: '', rows: 4, is_public: true, sort_order: 7, help: 'Up to four lines, written as Label | value | note — for example "Projects shipped | 24 | since 2021". Blank keeps the figures the page counts for itself.' },
   // ── analytics / system ───────────────────────────────────────────────────
   // ── seo / indexing ─────────────────────────────────────────────────────
   { key: 'site.url', label: 'Canonical site URL', type: 'text', group: 'seo', default: '', is_public: false, sort_order: 1, maxLength: 200, help: 'Absolute origin, e.g. https://covenantmedia.studio. Used for canonicals, sitemap and share cards. Falls back to the deployment URL.' },

@@ -47,6 +47,8 @@ export async function MediaPricingPage() {
   }));
   const settings = ctx.settings;
   const brandName = String(settings['brand.name'] ?? '').trim() || MEDIA_STUDIO.brand;
+  /** Written on the Media portfolio hub; omitted entirely when it is blank. */
+  const pricingNote = String(settings['media.pricing_note'] ?? '').trim();
 
   const studio = {
     phone: contact.phone ?? MEDIA_STUDIO.phone,
@@ -84,6 +86,13 @@ export async function MediaPricingPage() {
                 title="Clear scope, quoted per project"
                 lede="Every production is different, so each one is quoted on what it actually needs rather than a flat rate. Tell me the date and the scope and you get a fixed figure, with nothing added later."
               />
+              {/* The owner's note from the media hub (`media.pricing_note`). */}
+              {pricingNote ? (
+                <p className="mt-4 flex items-start gap-2 text-[0.875rem] leading-relaxed text-fg-muted">
+                  <Icon name="info" size={14} className="mt-0.5 shrink-0 text-[var(--accent)]" />
+                  {pricingNote}
+                </p>
+              ) : null}
             </div>
 
             <div className="mt-10 flex flex-wrap gap-3">

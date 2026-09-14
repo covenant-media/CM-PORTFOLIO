@@ -45,6 +45,14 @@ export default async function MediaPortfolioHub({ searchParams }: { searchParams
     intro: String(settings['media.hero_intro'] ?? ''),
     capabilities: String(settings['media.capabilities'] ?? ''),
   };
+  /**
+   * The rest of the media group, all of it. The four hero fields are edited in the hero board
+   * above; everything else the media surface reads — the figures band, the pricing note, the
+   * delivery promise, the intro and the calls to action — is edited here, so no setting in this
+   * group is only reachable from the generic settings screen.
+   */
+  const heroKeys = ['media.hero_eyebrow', 'media.hero_name', 'media.hero_intro', 'media.capabilities'];
+  const copyDefs = settingDefs('media').filter((def) => !heroKeys.includes(def.key));
   const portrait = String(settings['founder.portrait'] ?? '');
   const bio = String(settings['founder.bio_paragraphs'] ?? '');
   const portraitUrl = portrait.startsWith('/') ? `/api/admin/asset?path=${encodeURIComponent(portrait)}` : portrait;
@@ -139,6 +147,31 @@ export default async function MediaPortfolioHub({ searchParams }: { searchParams
               }))}
             />
           </div>
+        </Panel>
+
+        <Panel
+          title="Figures, notes & calls to action"
+          hint="The counted figures under the hero, the line beside the process steps, the note on the pricing page and the button labels. A blank field keeps the studio's published copy."
+        >
+          <SettingsForm
+            group="media"
+            label="Media portfolio copy"
+            hint="Save one group at a time. Nothing here touches the hero text above."
+            canWrite={canWrite}
+            returnTo="/admin/media-portfolio"
+            custom={[]}
+            fields={copyDefs.map((def) => ({
+              key: def.key,
+              label: def.label,
+              type: def.type,
+              help: def.help,
+              options: def.options,
+              rows: def.rows,
+              maxLength: def.maxLength,
+              value: settings[def.key] ?? def.default,
+              isPublic: def.is_public,
+            }))}
+          />
         </Panel>
 
         <Panel

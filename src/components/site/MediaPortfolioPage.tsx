@@ -48,7 +48,7 @@ import {
   MEDIA_TESTIMONIALS,
   type MediaTestimonial,
 } from '@/lib/media/sample-portfolio';
-import { biographyParagraphs, capabilityList, mediaRails, mediaVideoStories } from '@/lib/media/portfolio';
+import { biographyParagraphs, capabilityList, mediaRails, mediaStats, mediaVideoStories } from '@/lib/media/portfolio';
 import type { SocialItem } from '@/lib/types/content';
 
 export const revalidate = 60;
@@ -84,7 +84,12 @@ export default async function MediaPortfolioPage() {
 
   const settings = ctx.settings;
   const brandName = String(settings['brand.name'] ?? '').trim() || MEDIA_STUDIO.brand;
-  const founderName = String(settings['founder.name'] ?? '').trim() || MEDIA_STUDIO.founder;
+  // The hero name is its own field on the media hub (`media.hero_name`); the founder identity is
+  // the fallback so the greeting is never blank.
+  const founderName =
+    String(settings['media.hero_name'] ?? '').trim() ||
+    String(settings['founder.name'] ?? '').trim() ||
+    MEDIA_STUDIO.founder;
   // The portrait setting is an image-picker value: it can hold an uploaded asset id or a plain
   // URL. Resolve an id through the media library so a picture chosen in the CMS actually renders;
   // a URL or a repository path is used as-is, and an unset setting falls back to the published
@@ -124,6 +129,8 @@ export default async function MediaPortfolioPage() {
     String(settings['media.hero_intro'] ?? '').trim() ||
     'Covenant Media produces films, photography and live streams for brands, events and creators. I take a project from the first conversation through production, editing, colour and finishing, and hand over work that is ready to publish.';
   const capabilities = capabilityList(settings['media.capabilities']);
+  /** The delivery promise, shown with the process steps when the owner has written one. */
+  const deliveryPromise = String(settings['media.delivery_promise'] ?? '').trim();
   /** About the studio: the biography under the portrait, one paragraph per line. */
   const biography = biographyParagraphs(settings['founder.bio_paragraphs'], BIOGRAPHY);
   const mailHref = `mailto:${studio.email}`;
@@ -329,7 +336,7 @@ export default async function MediaPortfolioPage() {
             </div>
 
             {/* ── figures ── directly under the calls to action, above the capability list ── */}
-            <MediaStats className="mt-12 md:mt-16" />
+            <MediaStats className="mt-12 md:mt-16" stats={mediaStats(settings)} />
 
             {/* ── capability list ── */}
             <FadeIn delay={120}>
@@ -429,6 +436,13 @@ export default async function MediaPortfolioPage() {
               title="From enquiry to delivery"
               lede="Five steps, the same on every project, so you always know what happens next and what is expected from you."
             />
+            {/* The owner's own promise, when they have written one (`media.delivery_promise`). */}
+            {deliveryPromise ? (
+              <p className="mt-4 flex items-center gap-2 text-[0.875rem] text-fg-muted">
+                <Icon name="check" size={14} className="shrink-0 text-[var(--accent)]" />
+                {deliveryPromise}
+              </p>
+            ) : null}
             <Parallax distance={10}>
               <ol className="mt-11 grid gap-4 md:grid-cols-3 lg:grid-cols-5">
                 {MEDIA_PROCESS.map((step, index) => (

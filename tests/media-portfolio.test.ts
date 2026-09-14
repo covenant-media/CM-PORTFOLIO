@@ -568,3 +568,30 @@ test('the media footer carries the studio paragraph, the header social row and t
     assert.ok(media.includes(kept), `the media footer keeps ${kept}`);
   }
 });
+
+test('the hero figures, the hero name and the page notes come from the CMS', () => {
+  const loader = read('src/lib/media/portfolio.ts');
+  assert.match(loader, /export function mediaStats\(/, 'the figures have a loader');
+  for (const key of ['media.stat_years', 'media.stat_projects', 'media.stat_clients', 'media.stat_satisfaction']) {
+    assert.match(loader, new RegExp(key.replace('.', '\\.')), `${key} must be read`);
+  }
+  assert.match(loader, /const parts = \/\^\(\\d\+\)/, 'a value like "9+" is split into the number and its suffix');
+  const stats = read('src/components/site/MediaStats.tsx');
+  assert.match(stats, /const rows = stats\?\.length \? stats : MEDIA_STATS/, 'the band falls back to the studio figures slot by slot');
+  assert.match(MEDIA_PAGE, /stats=\{mediaStats\(settings\)\}/, 'the page hands the CMS figures to the band');
+  // The hero name has its own field; the founder identity is what it falls back to.
+  assert.match(MEDIA_PAGE, /settings\['media\.hero_name'\][\s\S]{0,120}settings\['founder\.name'\]/, 'the hero name reads media.hero_name, then founder.name');
+  // The two remaining media notes are read too, so nothing on the hub is a dead field.
+  assert.match(MEDIA_PAGE, /media\.delivery_promise/, 'the delivery promise is read');
+  assert.match(read('src/components/site/MediaPricingPage.tsx'), /media\.pricing_note/, 'the pricing note is read');
+});
+
+test('every setting the surfaces read can be edited in the CMS', () => {
+  const schema = read('src/lib/cms/settings.ts');
+  // The tech hero counts its figures from this key when it is filled in, so it has to be a field.
+  assert.match(schema, /key: 'tech\.hero_stats'/, 'the tech hero figures are editable');
+  assert.match(read('src/components/blocks/index.tsx'), /tech\.hero_stats/, 'and that is the key the hero reads');
+  // The launch checklist must check the key that actually exists.
+  assert.match(read('src/lib/cms/admin.ts'), /settings\['site\.url'\]/, 'the checklist reads site.url');
+  assert.doesNotMatch(read('src/lib/cms/admin.ts'), /seo\.site_url/, 'not a key that was never in the schema');
+});

@@ -18,6 +18,7 @@
  */
 import { getDb } from '../db';
 import { assetsByIds } from '../cms/content';
+import { MEDIA_STATS } from './sample-portfolio';
 import { MEDIA_CATEGORIES } from '../cms/options';
 import { deriveStory } from './story';
 import { humanize } from '../utils/text';
@@ -388,6 +389,31 @@ export async function mediaRails(): Promise<MediaRails> {
 }
 
 /** `media.capabilities` — one capability per line, falling back to the written eight. */
+export interface MediaStat {
+  label: string;
+  value: number;
+  suffix: string;
+}
+
+/**
+ * The studio figures, from the CMS.
+ *
+ * `media.stat_years`, `media.stat_projects`, `media.stat_clients` and
+ * `media.stat_satisfaction` each hold a plain value like "9+", "42+" or "97%": the digits become
+ * the counted number and whatever follows becomes the suffix. A blank field (or one with no
+ * digits in it) keeps the studio's own figure for that slot, so a half-filled band never prints a
+ * zero the studio does not stand behind.
+ */
+export function mediaStats(settings: Record<string, unknown> = {}): MediaStat[] {
+  const keys = ['media.stat_years', 'media.stat_projects', 'media.stat_clients', 'media.stat_satisfaction'];
+  return MEDIA_STATS.map((stat, index) => {
+    const raw = String(settings[keys[index]] ?? '').trim();
+    const parts = /^(\d+)\s*(.*)$/.exec(raw);
+    if (!parts) return stat;
+    return { label: stat.label, value: Number(parts[1]), suffix: parts[2] || stat.suffix };
+  });
+}
+
 export function capabilityList(value: unknown): string[] {
   const lines = String(value ?? '')
     .split('\n')

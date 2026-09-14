@@ -271,7 +271,7 @@ export async function needsAttention(): Promise<AttentionItem[]> {
     count('SELECT count(*)::int AS n FROM experience_item'),
   ]);
 
-  if (!String(settings['seo.site_url'] ?? '').startsWith('https://')) {
+  if (!String(settings['site.url'] ?? '').startsWith('https://')) {
     items.push({
       label: 'Canonical site URL not set',
       detail: 'Metadata, sitemap and social cards fall back to the request origin until you set it.',
