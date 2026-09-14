@@ -23,6 +23,7 @@ import { enforceLoginRate, recordAuthAttempt } from '@/lib/auth/rate-limit';
 import * as repo from '@/lib/cms/repository';
 import { getCmsModule } from '@/lib/cms/modules';
 import { parseForm, type AdminActionState } from '@/lib/cms/admin';
+import { VIDEO_FORM_OPTIONS } from '@/lib/cms/options';
 import { saveSetting, settingDefs } from '@/lib/cms/settings';
 import { replaceAsset } from '@/lib/media/storage';
 import { detectVideoSource, fetchOEmbed, type DetectedSource } from '@/lib/media/video';
@@ -223,6 +224,9 @@ export async function importVideoAction(formData: FormData): Promise<AdminAction
     const detected = detectVideoSource(url);
     if (!detected) return { ok: false, message: 'That link is not a recognised video URL' };
     const { meta } = await fetchOEmbed(detected);
+    // The hub offers a short-form and a long-form box, so the rail is decided before the paste.
+    const requested = String(formData.get('form') ?? '');
+    const form = VIDEO_FORM_OPTIONS.some((option) => option.value === requested) ? requested : null;
     const input: Record<string, unknown> = {
       source_url: url,
       title: meta?.title ?? url.slice(0, 80),
@@ -234,6 +238,7 @@ export async function importVideoAction(formData: FormData): Promise<AdminAction
       duration_s: meta?.duration ?? '',
       metadata_state: meta ? 'ready' : 'manual',
       status: 'draft',
+      ...(form ? { form } : {}),
     };
     const row = await repo.create('videos', input, ctx);
     newId = String(row.id ?? '');
@@ -250,10 +255,13 @@ export async function importVideoAction(formData: FormData): Promise<AdminAction
  */
 export async function rowFormAction(formData: FormData): Promise<void> {
   const moduleKey = String(formData.get('module') ?? 'pages');
+  // A board on a section hub sends `_return` so the round trip lands back where the click happened.
+  const back = String(formData.get('_return') ?? '');
   const result = await rowAction(formData);
   const flag = result.ok ? 'saved' : 'error';
   const query = result.ok ? '' : `&message=${encodeURIComponent(result.message ?? 'Could not do that')}`;
-  redirect(`/admin/${SAFE_MODULE.test(moduleKey) ? moduleKey : 'admin'}?${flag}=1${query}`);
+  const fallback = `/admin/${SAFE_MODULE.test(moduleKey) ? moduleKey : 'admin'}?${flag}=1${query}`;
+  redirect(back && SAFE_NEXT.test(back) ? `${back}?${flag}=1${query}` : fallback);
 }
 
 const SAFE_MODULE = /^[a-z_]{2,32}$/;
@@ -316,6 +324,18 @@ export async function rowAction(formData: FormData): Promise<AdminActionState> {
         await repo.setField(moduleKey, id, 'is_verified', true, ctx);
         message = 'Link confirmed — it can be published';
         break;
+      // Media hero: the short-form pieces the /media hero card rolls through. Same path as
+      // every other row action (permission → CSRF → validated field write → audit).
+      case 'hero-on':
+        if (moduleKey !== 'videos') throw new ApiError(400, 'Only videos have a hero preview');
+        await repo.setField(moduleKey, id, 'hero_preview', true, ctx);
+        message = 'Added to the hero preview';
+        break;
+      case 'hero-off':
+        if (moduleKey !== 'videos') throw new ApiError(400, 'Only videos have a hero preview');
+        await repo.setField(moduleKey, id, 'hero_preview', false, ctx);
+        message = 'Removed from the hero preview';
+        break;
       case 'activate-resume': {
         const db = await getDb();
         await db.transaction(async (tx) => {
@@ -351,6 +371,43 @@ export async function rowAction(formData: FormData): Promise<AdminActionState> {
   return { ok: true, message };
 }
 
+/**
+ * The client story attached to one video, saved from the media hub or the video editor.
+ *
+ * A story belongs to a video, so the three fields live on the `media_video` row rather than on a
+ * separate record. Only the fields the form actually carried are written, each through
+ * `setField` — which validates against the module registry, audits and revalidates the public
+ * caches exactly like every other CMS write.
+ */
+/**
+ * The client-story editor on the media hub. `_prev` and the bound `id` keep the same signature
+ * `useActionState` expects, which also means the form survives without JavaScript: the bound id
+ * travels in the markup.
+ */
+export async function saveVideoStoryAction(id: string, _prev: AdminActionState | null, formData: FormData): Promise<AdminActionState> {
+  try {
+    const ctx = await requirePermission('videos', 'write');
+    await assertCsrf(csrfOf(formData));
+    if (!id) throw new ApiError(400, 'Missing video');
+    const fields: [string, string][] = [
+      ['story_client', 'story_client'],
+      ['story_kind', 'story_kind'],
+      ['story_quote', 'story_quote'],
+    ];
+    const written: string[] = [];
+    for (const [field, key] of fields) {
+      if (!formData.has(key)) continue;
+      const value = String(formData.get(field) ?? '').trim();
+      await repo.setField('videos', id, key, value, ctx);
+      written.push(key);
+    }
+    if (!written.length) return { ok: false, message: 'Nothing to save' };
+    return { ok: true, message: 'Client story saved' };
+  } catch (err) {
+    return state(err);
+  }
+}
+
 /** Ordered id list from the reorder UI (navigation, galleries, services…). */
 export async function reorderAction(moduleKey: string, csrf: string, ids: string[]): Promise<AdminActionState> {
   try {
@@ -384,10 +441,15 @@ export async function saveCompositionAction(
 export async function saveSettingsFormAction(group: string, formData: FormData): Promise<void> {
   let message = '';
   let failed: AdminActionState | null = null;
+  // Read outside the try: the redirect at the end needs it whatever the outcome.
+  const returnTo = String(formData.get('_return') ?? '').trim();
   try {
     const ctx = await requirePermission('settings', 'write');
     await assertCsrf(csrfOf(formData));
     const defs = settingDefs(group as never);
+    // A section hub posts a partial form (only the fields it shows). `formData.has` is the
+    // contract: absent fields are left alone, so a focused board never clobbers the rest of the
+    // group. `_return` sends the editor back where they came from with the result attached.
     let saved = 0;
     for (const def of defs) {
       if (!formData.has(def.key) && def.type !== 'boolean') continue;
@@ -411,7 +473,11 @@ export async function saveSettingsFormAction(group: string, formData: FormData):
     failed = state(err);
   }
   const flag = failed ? `error=1&message=${encodeURIComponent(failed.message ?? 'Could not save')}` : `${message}`;
-  redirect(`/admin/settings?group=${encodeURIComponent(group)}&${flag}`);
+  // `_return` lets a section hub keep the editor on the screen they were working on; it is
+  // restricted to /admin paths so a crafted form cannot bounce a signed-in user off-site.
+  const destination =
+    returnTo && SAFE_NEXT.test(returnTo) ? `${returnTo}${returnTo.includes('?') ? '&' : '?'}${flag}` : `/admin/settings?group=${encodeURIComponent(group)}&${flag}`;
+  redirect(destination);
 }
 
 /** Removes a custom (non-schema) setting row. */

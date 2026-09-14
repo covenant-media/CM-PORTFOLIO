@@ -94,14 +94,37 @@ export function Shell({ groups, user, badges = {}, children }: ShellProps) {
               )}
             >
               <Icon name="home" size={15} className={pathname === '/admin' ? 'text-[var(--accent)]' : 'text-fg-dim'} />
-              Dashboard
+              Overview
+              <span className="ml-auto text-[10px] uppercase tracking-[0.14em] text-fg-dim">Every feature</span>
             </Link>
             {filtered.length === 0 ? (
               <p className="px-2.5 py-3 text-[12px] text-fg-dim">No section matches “{query}”.</p>
             ) : null}
             {filtered.map((group) => (
               <div key={group.key} className="mb-3.5">
-                <p className="px-2.5 pb-1 text-[10px] uppercase tracking-[0.16em] text-fg-dim">{group.label}</p>
+                {group.hub ? (
+                  <Link
+                    href={group.hub}
+                    title={group.hint}
+                    aria-current={pathname === group.hub ? 'page' : undefined}
+                    className={cx(
+                      'mb-[3px] flex items-center gap-2 rounded-2 px-2.5 py-[6px] text-[10px] uppercase tracking-[0.16em] transition-colors',
+                      pathname === group.hub
+                        ? 'bg-ink-800 text-fg'
+                        : 'text-fg-dim hover:bg-ink-900 hover:text-fg-muted',
+                    )}
+                  >
+                    <Icon
+                      name={adminIcon(group.icon)}
+                      size={12}
+                      className={pathname === group.hub ? 'text-[var(--accent)]' : 'text-fg-dim'}
+                    />
+                    <span className="truncate">{group.label}</span>
+                    <Icon name="arrow-right" size={11} className="ml-auto opacity-60" />
+                  </Link>
+                ) : (
+                  <p className="px-2.5 pb-1 text-[10px] uppercase tracking-[0.16em] text-fg-dim">{group.label}</p>
+                )}
                 <ul className="space-y-[2px]">
                   {group.items.map((item) => {
                     const active = pathname === `/admin/${item.key}` || pathname.startsWith(`/admin/${item.key}/`);

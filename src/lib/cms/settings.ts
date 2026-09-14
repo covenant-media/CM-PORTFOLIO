@@ -30,12 +30,15 @@ export const SETTINGS_SCHEMA: SettingDef[] = [
   { key: 'brand.footer_note', label: 'Footer note', type: 'textarea', group: 'brand', default: '', rows: 2, is_public: true, sort_order: 7 },
   { key: 'brand.og_image', label: 'Default social share image', type: 'asset', group: 'brand', default: '', is_public: false, sort_order: 8, help: 'Used for Open Graph when a page has no image of its own.' },
   // ── identity ──────────────────────────────────────────────────────────────
-  { key: 'founder.name', label: 'Founder name', type: 'text', group: 'identity', default: 'Covenant Nsikan', is_public: true, sort_order: 1 },
-  { key: 'founder.title', label: 'Founder title', type: 'text', group: 'identity', default: 'Founder, Digital Creative Director & Technology Professional', is_public: true, sort_order: 2 },
-  { key: 'founder.portrait', label: 'Founder portrait', type: 'image', group: 'identity', default: '', is_public: true, sort_order: 3 },
-  { key: 'founder.bio_short', label: 'Short bio', type: 'textarea', group: 'identity', default: '', rows: 3, is_public: true, sort_order: 4 },
-  { key: 'founder.bio', label: 'Full bio', type: 'markdown', group: 'identity', default: '', rows: 12, is_public: true, sort_order: 5 },
-  { key: 'founder.availability', label: 'Availability note', type: 'text', group: 'identity', default: '', maxLength: 120, is_public: true, sort_order: 6, help: 'e.g. "Booking weddings and brand work for Q2".' },
+  // The media portfolio's About section reads these four directly, which is what makes the
+  // studio picture and the biography editable from the CMS (Media portfolio → About the studio).
+  { key: 'founder.portrait', label: 'Founder portrait', type: 'image', group: 'identity', default: '', is_public: true, sort_order: 1, help: 'The studio picture on the media portfolio About section. Upload or pick one here and the frame updates on save.' },
+  { key: 'founder.name', label: 'Founder name', type: 'text', group: 'identity', default: 'Covenant Nsikan', is_public: true, sort_order: 2 },
+  { key: 'founder.title', label: 'Founder title', type: 'text', group: 'identity', default: 'Founder, Digital Creative Director & Technology Professional', is_public: true, sort_order: 3 },
+  { key: 'founder.bio_paragraphs', label: 'Media portfolio biography', type: 'textarea', group: 'identity', default: '', rows: 10, is_public: true, sort_order: 4, help: 'The text under the portrait on the media portfolio. One paragraph per line — each line becomes its own paragraph. Blank falls back to the built-in studio story.' },
+  { key: 'founder.bio_short', label: 'Short bio', type: 'textarea', group: 'identity', default: '', rows: 3, is_public: true, sort_order: 5 },
+  { key: 'founder.bio', label: 'Full bio', type: 'markdown', group: 'identity', default: '', rows: 12, is_public: true, sort_order: 6 },
+  { key: 'founder.availability', label: 'Availability note', type: 'text', group: 'identity', default: '', maxLength: 120, is_public: true, sort_order: 7, help: 'e.g. "Booking weddings and brand work for Q2".' },
   // ── contact ──────────────────────────────────────────────────────────────
   { key: 'contact.email', label: 'Email', type: 'email', group: 'contact', default: '', is_public: true, sort_order: 1 },
   { key: 'contact.email_alt', label: 'Secondary email', type: 'email', group: 'contact', default: '', is_public: true, sort_order: 2 },
@@ -54,11 +57,21 @@ export const SETTINGS_SCHEMA: SettingDef[] = [
   { key: 'forms.turnstile_site_key', label: 'Cloudflare Turnstile site key', type: 'text', group: 'forms', default: '', is_public: true, sort_order: 5, help: 'Optional. Leave blank to use the built-in honeypot + timing + rate-limit defence.' },
   { key: 'forms.max_message_length', label: 'Max message length', type: 'number', group: 'forms', default: 4000, is_public: false, sort_order: 6 },
   // ── media portfolio ──────────────────────────────────────────────────────
-  { key: 'media.intro', label: 'Media portfolio intro', type: 'textarea', group: 'media', default: '', rows: 3, is_public: true, sort_order: 1 },
-  { key: 'media.cta_primary', label: 'Primary CTA label', type: 'text', group: 'media', default: 'View work', is_public: true, sort_order: 2 },
-  { key: 'media.cta_secondary', label: 'Secondary CTA label', type: 'text', group: 'media', default: 'Hire Covenant', is_public: true, sort_order: 3 },
-  { key: 'media.pricing_note', label: 'Pricing note', type: 'textarea', group: 'media', default: 'Every shoot is scoped. Packages appear here once confirmed.', rows: 2, is_public: true, sort_order: 4 },
-  { key: 'media.delivery_promise', label: 'Delivery promise', type: 'text', group: 'media', default: '', maxLength: 160, is_public: true, sort_order: 5 },
+  // The hero copy (CMS → Media portfolio → Hero text) and the figures band. Every one of these
+  // is read by `MediaPortfolioPage`; blank falls back to the studio's published words.
+  { key: 'media.hero_eyebrow', label: 'Hero — small line above the name', type: 'text', group: 'media', default: "Hello, I'm", maxLength: 60, is_public: true, sort_order: 1 },
+  { key: 'media.hero_name', label: 'Hero — the name', type: 'text', group: 'media', default: 'Covenant Nsikan', maxLength: 80, is_public: true, sort_order: 2, help: 'The given name prints in the brand gold and the surname in the surface white, like the logo.' },
+  { key: 'media.hero_intro', label: 'Hero — introduction', type: 'textarea', group: 'media', default: '', rows: 4, maxLength: 600, is_public: true, sort_order: 3, help: 'The paragraph under the name. Blank falls back to the built-in studio introduction.' },
+  { key: 'media.capabilities', label: 'Hero — capability list', type: 'textarea', group: 'media', default: '', rows: 6, is_public: true, sort_order: 4, help: 'One capability per line (the list under the figures band). Blank falls back to the built-in eight.' },
+  { key: 'media.stat_years', label: 'Figure — years on set', type: 'text', group: 'media', default: '', maxLength: 20, is_public: true, sort_order: 5, help: 'e.g. "8+". Blank hides nothing — the built-in figure stays until you replace it.' },
+  { key: 'media.stat_projects', label: 'Figure — completed projects', type: 'text', group: 'media', default: '', maxLength: 20, is_public: true, sort_order: 6 },
+  { key: 'media.stat_clients', label: 'Figure — happy clients', type: 'text', group: 'media', default: '', maxLength: 20, is_public: true, sort_order: 7 },
+  { key: 'media.stat_satisfaction', label: 'Figure — satisfaction', type: 'text', group: 'media', default: '', maxLength: 20, is_public: true, sort_order: 8 },
+  { key: 'media.intro', label: 'Media portfolio intro', type: 'textarea', group: 'media', default: '', rows: 3, is_public: true, sort_order: 10 },
+  { key: 'media.cta_primary', label: 'Primary CTA label', type: 'text', group: 'media', default: 'View work', is_public: true, sort_order: 11 },
+  { key: 'media.cta_secondary', label: 'Secondary CTA label', type: 'text', group: 'media', default: 'Hire Covenant', is_public: true, sort_order: 12 },
+  { key: 'media.pricing_note', label: 'Pricing note', type: 'textarea', group: 'media', default: 'Every shoot is scoped. Packages appear here once confirmed.', rows: 2, is_public: true, sort_order: 13 },
+  { key: 'media.delivery_promise', label: 'Delivery promise', type: 'text', group: 'media', default: '', maxLength: 160, is_public: true, sort_order: 14 },
   // ── tech portfolio ───────────────────────────────────────────────────────
   { key: 'tech.intro', label: 'Tech portfolio intro', type: 'textarea', group: 'tech', default: '', rows: 3, is_public: true, sort_order: 1 },
   { key: 'tech.role', label: 'Role headline', type: 'text', group: 'tech', default: 'Full-stack developer & cybersecurity specialist', is_public: true, sort_order: 2 },
@@ -73,7 +86,7 @@ export const SETTINGS_SCHEMA: SettingDef[] = [
   { key: 'seo.twitter_handle', label: 'X / Twitter handle', type: 'text', group: 'seo', default: '', is_public: false, sort_order: 4, help: 'With the leading @. Leave blank until the account is confirmed.' },
   { key: 'seo.noindex', label: 'Ask search engines not to index', type: 'boolean', group: 'seo', default: false, is_public: false, sort_order: 5, help: 'For pre-launch builds only. Turn off when the site goes public.' },
   { key: 'seo.organization_logo', label: 'Organisation logo', type: 'asset', group: 'seo', default: '', is_public: false, sort_order: 6, help: 'Used in structured data. Only set once a real logo file exists.' },
-  { key: 'pricing.disclaimer', label: 'Pricing footnote', type: 'textarea', group: 'media', default: '', rows: 2, is_public: true, sort_order: 6, help: 'Shown under published packages. Keep it factual — travel and extra crew are typical additions.' },
+  { key: 'pricing.disclaimer', label: 'Pricing footnote', type: 'textarea', group: 'media', default: '', rows: 2, is_public: true, sort_order: 15, help: 'Shown under published packages. Keep it factual — travel and extra crew are typical additions.' },
   { key: 'tech.experience_since', label: 'Working since (year)', type: 'number', group: 'tech', default: 0, is_public: true, sort_order: 6, help: 'Only a year you can stand behind. Used for the “years building” figure; 0 hides it.' },
   // ── legal / security page ──────────────────────────────────────────────
   { key: 'legal.summary', label: 'Security page — summary', type: 'textarea', group: 'legal', default: 'Covenant Media is a small studio, not a data platform. This site stores what you send us and nothing else: no advertising trackers, no third-party analytics, no tracking cookies.', rows: 3, is_public: true, sort_order: 1 },

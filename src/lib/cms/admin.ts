@@ -4,6 +4,7 @@
  * Everything here is server-only and every list is bounded.
  */
 import { getDb } from '../db';
+import { mediaVideoRows } from '../media/portfolio';
 import { CMS_MODULES, getCmsModule, type CmsModuleDef } from './modules';
 import { levelFor, SYSTEM_ROLES, can, type ModuleKey, type PermissionLevel } from '../auth/permissions';
 import { getSettings } from './settings';
@@ -85,32 +86,148 @@ export interface AdminNavGroup {
   key: string;
   label: string;
   hint: string;
+  /** The section's own page, so the sidebar can link every label to its hub. */
+  hub: string;
+  icon: string;
   items: AdminNavItem[];
 }
 
-/** The sidebar is the module registry filtered by what this role may even read. */
+/**
+ * The CMS has exactly four sections plus the dashboard. Each one owns the content of one
+ * surface (or the shared plumbing), has its own hub page, its own live links and its own set
+ * of modules — so "where do I change the media hero?" has one answer, not six.
+ *
+ * Section membership lives on the module itself (`CmsModuleDef.group`); this table adds the
+ * order the sidebar and hubs present them in, the hub route, and the public pages the section
+ * drives. Nothing here duplicates business logic — the modules keep their own fields.
+ */
+export interface CmsSection {
+  key: string;
+  label: string;
+  hint: string;
+  icon: string;
+  /** The hub screen for this section. The Overview section's hub is the dashboard itself. */
+  hub: string;
+  /** Public pages this section controls, for the "see it live" strip. */
+  live: { label: string; href: string }[];
+  /** Sidebar/hub order for the section's modules. */
+  order: string[];
+}
+
+export const CMS_SECTIONS: CmsSection[] = [
+  {
+    key: 'Overview',
+    label: 'Overview',
+    hint: 'Every feature in one place, with what needs you next',
+    icon: 'home',
+    hub: '/admin',
+    live: [
+      { label: 'Main site', href: '/' },
+      { label: 'Media portfolio', href: '/media-portfolio' },
+      { label: 'Tech portfolio', href: '/tech-portfolio' },
+    ],
+    order: [],
+  },
+  {
+    key: 'Media',
+    label: 'Media portfolio',
+    hint: 'Films, vertical edits, photography, client stories, uploads',
+    icon: 'film',
+    hub: '/admin/media-portfolio',
+    live: [
+      { label: 'Media portfolio', href: '/media-portfolio' },
+      { label: 'Pricing', href: '/media/pricing' },
+      { label: 'Long-form catalog', href: '/media/long-form' },
+      { label: 'Short-form catalog', href: '/media/short-form' },
+      { label: 'Photography catalog', href: '/media/photography' },
+    ],
+    order: ['videos', 'photos', 'media_projects', 'galleries', 'media_library', 'testimonials'],
+  },
+  {
+    key: 'Tech',
+    label: 'Tech portfolio',
+    hint: 'Projects, skills, experience, certifications, resume',
+    icon: 'code',
+    hub: '/admin/tech-portfolio',
+    live: [
+      { label: 'Tech portfolio', href: '/tech-portfolio' },
+      { label: 'Projects', href: '/tech/projects' },
+      { label: 'Resume', href: '/tech/resume' },
+    ],
+    order: ['tech_projects', 'skills', 'experience', 'certifications', 'resume'],
+  },
+  {
+    key: 'Website',
+    label: 'Main website',
+    hint: 'Pages, sections, menus, services, team, writing, pricing',
+    icon: 'layers',
+    hub: '/admin/main-website',
+    live: [
+      { label: 'Home', href: '/' },
+      { label: 'Services', href: '/services' },
+      { label: 'Work', href: '/work' },
+      { label: 'Journal', href: '/blog' },
+    ],
+    order: ['pages', 'blocks', 'navigation', 'services', 'team', 'blog', 'pricing'],
+  },
+  {
+    key: 'System',
+    label: 'System',
+    hint: 'Settings, social links, SEO, enquiries, featured content, contact details',
+    icon: 'settings',
+    hub: '/admin/system',
+    live: [{ label: 'Public site', href: '/' }],
+    order: ['settings', 'social_links', 'contact_info', 'seo', 'submissions', 'featured'],
+  },
+];
+
+export function sectionFor(key: string): CmsSection | undefined {
+  return CMS_SECTIONS.find((section) => section.key === key);
+}
+
+/**
+ * The modules of one section, in the section's declared order. `Overview` (and any key with an
+ * empty order list) returns every module, which is what a "everything at a glance" screen wants.
+ */
+export function modulesForSection(key: string): CmsModuleDef[] {
+  const section = sectionFor(key);
+  if (!section || section.key === 'Overview') return CMS_MODULES;
+  const rank = new Map(section.order.map((moduleKey, index) => [moduleKey, index]));
+  return CMS_MODULES.filter((m) => m.group === section.key).sort(
+    (a, b) => (rank.get(a.key) ?? 99) - (rank.get(b.key) ?? 99),
+  );
+}
+
+/** Modules the Overview screen should not count as content (they are not tables). */
+export const OVERVIEW_SKIP = new Set(['settings', 'contact_info', 'featured', 'seo', 'account']);
+
+/** The sidebar is the section list, filtered by what this role may even read. */
 export async function adminNav(role: string, roleMap?: Record<string, PermissionLevel>): Promise<AdminNavGroup[]> {
-  return CmsModuleGroups.map((group) => ({
-    ...group,
-    items: CMS_MODULES.filter((m) => m.group === group.key && can(role, m.permission ?? m.key, 'read', roleMap)).map((m) => ({
-      key: m.key,
-      label: m.label,
-      icon: m.icon,
-      level: levelFor(role, m.permission ?? m.key, roleMap),
-    })),
+  // The Overview section owns no modules of its own — its hub is the dashboard, which the shell
+  // links first. Listing it here as well would print every module twice.
+  return CMS_SECTIONS.filter((section) => section.order.length > 0).map((section) => ({
+    key: section.key,
+    label: section.label,
+    hint: section.hint,
+    hub: section.hub,
+    icon: section.icon,
+    items: modulesForSection(section.key)
+      .filter((m) => can(role, m.permission ?? m.key, 'read', roleMap))
+      .map((m) => ({
+        key: m.key,
+        label: m.label,
+        icon: m.icon,
+        level: levelFor(role, m.permission ?? m.key, roleMap),
+      })),
   })).filter((group) => group.items.length > 0);
 }
 
-export const CmsModuleGroups = [
-  { key: 'Structure', label: 'Structure', hint: 'Pages, sections, menus' },
-  { key: 'Brand', label: 'Brand & settings', hint: 'How the whole platform reads' },
-  { key: 'Media', label: 'Media portfolio', hint: 'Films, stills, projects' },
-  { key: 'Technology', label: 'Tech portfolio', hint: 'Systems, skills, resume' },
-  { key: 'Trust', label: 'Proof', hint: 'Team, testimonials, credentials' },
-  { key: 'Commerce', label: 'Offers & contact', hint: 'Pricing, contact routing' },
-  { key: 'Insight', label: 'Writing', hint: 'Journal' },
-  { key: 'System', label: 'System', hint: 'SEO, inbox, media library' },
-] as const;
+/** Kept for the module list page's header, which shows the module's section as a crumb. */
+export const CmsModuleGroups = CMS_SECTIONS.map((section) => ({
+  key: section.key,
+  label: section.label,
+  hint: section.hint,
+})) as { key: string; label: string; hint: string }[];
 
 export function moduleFor(key: string): CmsModuleDef {
   const module = getCmsModule(key);
@@ -596,3 +713,160 @@ export async function assetUrls(ids: (string | null | undefined)[]): Promise<Rec
 }
 
 export const ROLE_OPTIONS = SYSTEM_ROLES.map((r) => ({ value: r.key, label: r.label, hint: r.description }));
+
+// ── section hubs ────────────────────────────────────────────────────────────
+//
+// One implementation of "here is everything in this section, what it holds, what needs you and
+// where it lives on the public site". The four hub screens differ only in the copy and the
+// extra boards they add, so they share this shape instead of four bespoke pages.
+
+export interface HubStat {
+  key: string;
+  label: string;
+  value: number | string;
+  hint?: string;
+}
+
+export interface HubTool {
+  key: string;
+  label: string;
+  href: string;
+  icon: string;
+  description: string;
+  count?: number;
+  level: PermissionLevel;
+  /** Public page this module drives, when it has one. */
+  live?: string;
+}
+
+export interface SectionHub {
+  section: CmsSection;
+  stats: HubStat[];
+  tools: HubTool[];
+}
+
+/** Stat cards per section, drawn from the counters the dashboard already computes. */
+const SECTION_STATS: Record<string, { key: string; label: string; hint?: string }[]> = {
+  Media: [
+    { key: 'published_videos', label: 'Published films & edits' },
+    { key: 'hero_preview', label: 'In the hero card', hint: 'Short-form pieces toggled into the /media hero' },
+    { key: 'photo_frames', label: 'Photography frames', hint: 'Across the published photo sets' },
+    { key: 'media_stories', label: 'Client stories' },
+  ],
+  Tech: [
+    { key: 'tech_projects', label: 'Tech projects' },
+    { key: 'skills', label: 'Skills' },
+    { key: 'experience', label: 'Experience entries' },
+    { key: 'certifications', label: 'Certifications' },
+  ],
+  Website: [
+    { key: 'pages', label: 'Authored pages' },
+    { key: 'services', label: 'Services' },
+    { key: 'team', label: 'Team members' },
+    { key: 'posts', label: 'Journal posts' },
+  ],
+  System: [
+    { key: 'socials', label: 'Social links' },
+    { key: 'seo_records', label: 'SEO overrides' },
+    { key: 'new_submissions', label: 'Unread enquiries' },
+    { key: 'assets', label: 'Uploaded files' },
+  ],
+};
+
+export interface SectionHubOptions {
+  role: string;
+  roleMap?: Record<string, PermissionLevel>;
+  counts: Record<string, number>;
+  /** Extra cards for a section-specific board (the media hub's hero/watch numbers). */
+  extraStats?: HubStat[];
+  /** Modules to leave off this hub's tool grid (they get their own board instead). */
+  omit?: string[];
+}
+
+export async function sectionHub(key: string, options: SectionHubOptions): Promise<SectionHub> {
+  const section = sectionFor(key) ?? CMS_SECTIONS[1]!;
+  const tools = modulesForSection(section.key)
+    .filter((m) => !(options.omit ?? []).includes(m.key))
+    .filter((m) => can(options.role, m.permission ?? m.key, 'read', options.roleMap))
+    .map((m) => ({
+      key: m.key,
+      label: m.label,
+      href: `/admin/${m.key}`,
+      icon: m.icon,
+      description: m.description,
+      count: options.counts[m.key],
+      level: levelFor(options.role, m.permission ?? m.key, options.roleMap),
+      live: m.publicBase,
+    }));
+  const stats: HubStat[] = (SECTION_STATS[section.key] ?? [])
+    .map((stat) => ({ ...stat, value: options.counts[stat.key] ?? 0 }) as HubStat)
+    .concat(options.extraStats ?? []);
+  return { section, stats, tools };
+}
+
+/* ── media hub boards ────────────────────────────────────────────────────── */
+
+export interface MediaVideoBoardRow {
+  id: string;
+  title: string;
+  format: 'long' | 'short';
+  form: string | null;
+  status: string;
+  heroPreview: boolean;
+  isFeatured: boolean;
+  duration: string | null;
+  poster: string | null;
+  client: string | null;
+  storyClient: string | null;
+  storyKind: string | null;
+  storyQuote: string | null;
+  /** What the public rail would call this story if the fields are left as they are. */
+  derivedAuthor: string;
+  derivedContext: string;
+}
+
+/**
+ * Every video the CMS holds, with what the hero and the client-stories rail would do with it.
+ * Drafts are included on purpose: the boards are where an editor decides what goes live.
+ */
+export async function mediaVideoBoard(): Promise<MediaVideoBoardRow[]> {
+  const rows = await mediaVideoRows({ includeDrafts: true });
+  const posters = await assetUrls(rows.map((row) => row.posterAssetId));
+  const { formatDuration } = await import('../media/portfolio');
+  const { deriveStory } = await import('../media/story');
+  return rows.map((row) => {
+    const short = row.form === 'short_form' || row.source === 'tiktok' || row.source === 'instagram';
+    const story = deriveStory({
+      title: row.title,
+      description: row.description,
+      client: row.client,
+      storyClient: row.storyClient,
+      storyKind: row.storyKind,
+    });
+    return {
+      id: row.id,
+      title: row.title,
+      format: short ? ('short' as const) : ('long' as const),
+      form: row.form,
+      status: row.status,
+      heroPreview: row.heroPreview,
+      isFeatured: row.isFeatured,
+      duration: formatDuration(row.durationS),
+      poster: row.posterAssetId ? (posters[row.posterAssetId] ?? null) : row.posterUrl,
+      client: row.client,
+      storyClient: row.storyClient,
+      storyKind: row.storyKind,
+      storyQuote: row.storyQuote,
+      derivedAuthor: story.author,
+      derivedContext: story.context,
+    };
+  });
+}
+
+/** The current hero order, resolved to titles — what the visitor actually sees, in order. */
+export async function mediaHeroOrder(): Promise<{ id: string; title: string; poster: string | null }[]> {
+  const board = await mediaVideoBoard();
+  return board
+    .filter((row) => row.heroPreview && row.format === 'short' && row.status === 'published')
+    .map((row) => ({ id: row.id, title: row.title, poster: row.poster }));
+}

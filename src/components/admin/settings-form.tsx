@@ -32,6 +32,7 @@ export function SettingsForm({
   fields,
   custom,
   canWrite,
+  returnTo,
 }: {
   group: string;
   label: string;
@@ -39,6 +40,8 @@ export function SettingsForm({
   fields: SettingField[];
   custom: { key: string; label: string; value: string }[];
   canWrite: boolean;
+  /** Where to land after saving — the section hub that embedded this group, when there is one. */
+  returnTo?: string;
 }) {
   const csrf = useCsrf();
   const action = canWrite ? saveSettingsFormAction.bind(null, group) : undefined;
@@ -47,6 +50,7 @@ export function SettingsForm({
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="_csrf" value={csrf} />
+      {returnTo ? <input type="hidden" name="_return" value={returnTo} /> : null}
       <div className="rounded-4 border border-line bg-ink-900/50">
         <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-3.5">
           <div>

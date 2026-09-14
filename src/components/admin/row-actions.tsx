@@ -18,7 +18,20 @@ export interface RowAction {
   force?: boolean;
 }
 
-export function RowActionForm({ module, id, action, compact = false }: { module: string; id: string; action: RowAction; compact?: boolean }) {
+export function RowActionForm({
+  module,
+  id,
+  action,
+  compact = false,
+  returnTo,
+}: {
+  module: string;
+  id: string;
+  action: RowAction;
+  compact?: boolean;
+  /** Where to land after the action, when this form is embedded in a board rather than a list. */
+  returnTo?: string;
+}) {
   const csrf = useCsrf();
   const [armed, setArmed] = useState(false);
 
@@ -45,6 +58,7 @@ export function RowActionForm({ module, id, action, compact = false }: { module:
       <input type="hidden" name="module" value={module} />
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="op" value={action.op} />
+      {returnTo ? <input type="hidden" name="_return" value={returnTo} /> : null}
       {action.force ? <input type="hidden" name="force" value="1" /> : null}
       {action.confirm ? (
         <span className="mr-1.5 text-[11px] text-alert-400">{action.confirm}</span>

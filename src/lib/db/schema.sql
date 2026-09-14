@@ -303,6 +303,13 @@ CREATE TABLE IF NOT EXISTS media_video (
   metadata_state TEXT NOT NULL DEFAULT 'derived',      -- derived | manual | partial | failed
   metadata       JSONB NOT NULL DEFAULT '{}'::jsonb,   -- raw fetched payload (auditable)
   external_url  TEXT,
+  -- Client story published with the piece (CMS → Media portfolio → Videos / Client stories).
+  -- The public rail reads these three columns and falls back to the record's own title when
+  -- no client name was supplied, so a story is never invented and never blank.
+  story_client   TEXT,
+  story_kind     TEXT,                            -- campaign | photoshoot | wedding | event | …
+  story_quote    TEXT,
+  hero_preview   BOOLEAN NOT NULL DEFAULT FALSE,  -- short-form only: preview in the /media hero
   is_featured    BOOLEAN NOT NULL DEFAULT FALSE,
   is_sample      BOOLEAN NOT NULL DEFAULT FALSE,
   status         TEXT NOT NULL DEFAULT 'draft',
@@ -312,9 +319,17 @@ CREATE TABLE IF NOT EXISTS media_video (
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Additive migration for databases created before these columns existed. `CREATE TABLE IF NOT
+-- EXISTS` above is a no-op on an existing table, so every column added after the first release
+-- is repeated here. Both statements are idempotent and run on every boot.
+ALTER TABLE media_video ADD COLUMN IF NOT EXISTS story_client TEXT;
+ALTER TABLE media_video ADD COLUMN IF NOT EXISTS story_kind TEXT;
+ALTER TABLE media_video ADD COLUMN IF NOT EXISTS story_quote TEXT;
+ALTER TABLE media_video ADD COLUMN IF NOT EXISTS hero_preview BOOLEAN NOT NULL DEFAULT FALSE;
 CREATE INDEX IF NOT EXISTS idx_video_project ON media_video(project_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_video_status ON media_video(status, is_featured);
-CREATE INDEX IF NOT EXISTS idx_video_form ON media_video(form);
+CREATE INDEX IF NOT EXISTS idx_video_form ON media_video(form, sort_order);
+CREATE INDEX IF NOT EXISTS idx_video_hero ON media_video(hero_preview) WHERE hero_preview = TRUE;
 
 CREATE TABLE IF NOT EXISTS gallery (
   id          TEXT PRIMARY KEY,

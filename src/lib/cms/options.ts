@@ -54,6 +54,30 @@ export const VIDEO_FORM_OPTIONS = [
   { value: 'other', label: 'Other' },
 ] as const;
 
+/**
+ * The kind of work a client story describes.
+ *
+ * Shared by the video editor's "type of work" dropdown, the CMS client-story board and the
+ * public derivation in `lib/media/portfolio.ts`, so the label a story shows on the site is the
+ * same one the editor picked. `detect` is the sentinel for "work it out from the title", which
+ * is why the empty-string option is added where the select is built rather than here.
+ */
+export const STORY_KINDS = [
+  { value: 'auto', label: 'Detect from the title' },
+  { value: 'promotional_campaign', label: 'Promotional campaign' },
+  { value: 'photoshoot', label: 'Photoshoot' },
+  { value: 'wedding', label: 'Wedding' },
+  { value: 'child_dedication', label: 'Child dedication' },
+  { value: 'event', label: 'Event coverage' },
+  { value: 'church_convention', label: 'Church / convention' },
+  { value: 'school_event', label: 'School event' },
+  { value: 'music_video', label: 'Music video' },
+  { value: 'commercial', label: 'Commercial' },
+  { value: 'documentary', label: 'Documentary' },
+  { value: 'burial', label: 'Burial / memorial' },
+  { value: 'other', label: 'Other' },
+] as const;
+
 /** PRD §8 — technology project categories. */
 export const TECH_CATEGORIES = [
   { value: 'web_app', label: 'Web application' },

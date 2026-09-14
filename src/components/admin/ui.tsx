@@ -54,6 +54,8 @@ export interface AdminNavGroupLite {
   key: string;
   label: string;
   hint: string;
+  hub?: string;
+  icon?: string;
   items: AdminNavItemLite[];
 }
 

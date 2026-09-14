@@ -1,65 +1,138 @@
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
-import { Panel, Pill, StatusPill, whenLabel, adminIcon } from '@/components/admin/ui';
-import { needsAttention, recentActivity, submissionsInbox } from '@/lib/cms/admin';
+import { Notice } from '@/components/admin/notice';
+import { HubHeader, StatRow } from '@/components/admin/hub';
+import { Panel, Pill, adminIcon, whenLabel } from '@/components/admin/ui';
+import { CMS_SECTIONS, needsAttention, recentActivity, sectionHub, submissionsInbox } from '@/lib/cms/admin';
 import { dashboardCounts } from '@/lib/cms/repository';
 import { readSession } from '@/lib/auth/session';
+import { permissionsForRole } from '@/lib/auth/guard';
 import { getSettings } from '@/lib/cms/settings';
 
 export const dynamic = 'force-dynamic';
 
-const TILES: { key: string; label: string; href: string; icon: string }[] = [
-  { key: 'media_projects', label: 'Media projects', href: '/admin/media_projects', icon: 'camera' },
-  { key: 'tech_projects', label: 'Tech projects', href: '/admin/tech_projects', icon: 'code' },
-  { key: 'videos', label: 'Videos', href: '/admin/videos', icon: 'film' },
-  { key: 'assets', label: 'Uploaded media', href: '/admin/media_library', icon: 'archive' },
-  { key: 'posts', label: 'Journal posts', href: '/admin/blog', icon: 'book' },
-  { key: 'services', label: 'Services', href: '/admin/services', icon: 'briefcase' },
-  { key: 'testimonials', label: 'Testimonials', href: '/admin/testimonials', icon: 'quote' },
-  { key: 'new_submissions', label: 'Unread enquiries', href: '/admin/submissions', icon: 'inbox' },
+/** The four numbers the whole platform is judged by, in the order they matter. */
+const HEADLINE_STATS: { key: string; label: string; hint?: string }[] = [
+  { key: 'published_videos', label: 'Films & edits published', hint: 'Long and short form, live on the media portfolio' },
+  { key: 'photo_frames', label: 'Photography frames', hint: 'Published across the event-photography sets' },
+  { key: 'media_stories', label: 'Client stories', hint: 'Attributed to a real piece of work' },
+  { key: 'pages', label: 'Authored pages', hint: 'Across the main, media and tech surfaces' },
 ];
 
-export default async function DashboardPage() {
-  const [session, counts, attention, activity, inbox, settings] = await Promise.all([
-    readSession(),
-    dashboardCounts(),
-    needsAttention(),
-    recentActivity(10),
-    submissionsInbox({ status: 'new', page: 1 }),
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const raw = await searchParams;
+  const session = await readSession();
+  if (!session) return null;
+  const role = session.user.role;
+  const roleMap = await permissionsForRole(role);
+
+  const counts: Record<string, number> = await dashboardCounts();
+  const [settings, attention, activity, inbox, sections] = await Promise.all([
     getSettings(),
+    needsAttention(),
+    recentActivity(8),
+    submissionsInbox({ status: 'new', page: 1 }),
+    Promise.all(
+      CMS_SECTIONS.filter((section) => section.key !== 'Overview').map((section) =>
+        sectionHub(section.key, { role, roleMap, counts }),
+      ),
+    ),
   ]);
-  const firstName = (session?.user.name ?? '').split(' ')[0] || 'there';
-  const published = counts.published_projects ?? 0;
+
+  const firstName = (session.user.name ?? '').split(' ')[0] || 'there';
   const samples = counts.samples ?? 0;
-  const real = Math.max(0, published - samples);
+  const maintenance = settings['system.maintenance'] === true;
 
   return (
-    <div className="space-y-7">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-fg-dim">{String(settings['brand.name'] ?? 'Covenant Media')}</p>
-          <h1 className="mt-1 font-display text-[26px] leading-tight">Good to see you, {firstName}.</h1>
-          <p className="mt-1 max-w-[62ch] text-[13px] leading-relaxed text-fg-muted">
-            {real} real {real === 1 ? 'project is' : 'projects are'} published and {samples} {samples === 1 ? 'row is' : 'rows are'} still
-            placeholder. Everything on the public site is edited here — nothing is written into the code.
-          </p>
+    <div className="space-y-6">
+      <HubHeader
+        eyebrow={String(settings['brand.name'] ?? 'Covenant Media')}
+        title={`Good to see you, ${firstName}.`}
+        hint="Nothing on the public site is written in code — it all comes from the four sections below. Start at a section to change what it publishes, or work through the list of things only you can confirm."
+        live={CMS_SECTIONS[0]!.live}
+      >
+        <Pill tone={maintenance ? 'warn' : 'ok'}>
+          <Icon name={maintenance ? 'alert' : 'check'} size={11} />
+          {maintenance ? 'Maintenance mode is on' : 'Public site is live'}
+        </Pill>
+        {samples > 0 ? <Pill tone="info">{samples} placeholder row{samples === 1 ? '' : 's'} still in the site</Pill> : null}
+      </HubHeader>
+
+      <Notice params={raw} />
+
+      <StatRow stats={HEADLINE_STATS.map((stat) => ({ ...stat, value: counts[stat.key] ?? 0 }))} />
+
+      <section className="space-y-3">
+        <h2 className="text-[11px] uppercase tracking-[0.2em] text-fg-dim">The four sections</h2>
+        <div className="grid gap-3 lg:grid-cols-2">
+          {sections.map((hub) => (
+            <article key={hub.section.key} className="flex flex-col rounded-4 border border-line bg-ink-900/50">
+              <header className="flex items-start gap-3 border-b border-line/60 px-5 py-4">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-3 border border-[var(--accent)]/25 bg-[var(--accent-glow)] text-[var(--accent)]">
+                  <Icon name={adminIcon(hub.section.icon)} size={16} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span className="font-display text-[17px] leading-tight text-fg">{hub.section.label}</span>
+                    <span className="rounded-pill border border-line px-1.5 text-[10.5px] text-fg-dim">
+                      {hub.tools.length} editor{hub.tools.length === 1 ? '' : 's'}
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-[12px] leading-snug text-fg-dim">{hub.section.hint}</span>
+                </span>
+                <Link
+                  href={hub.section.hub}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-2 border border-[var(--accent)]/45 px-2.5 py-1 text-[11.5px] text-[var(--accent)] transition-colors hover:bg-[var(--accent-glow)]"
+                >
+                  Open <Icon name="arrow-right" size={11} />
+                </Link>
+              </header>
+
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 px-5 py-4 sm:grid-cols-4">
+                {hub.stats.map((stat) => (
+                  <div key={stat.key} className="min-w-0">
+                    <dt className="truncate text-[10.5px] uppercase tracking-[0.12em] text-fg-dim" title={stat.label}>
+                      {stat.label}
+                    </dt>
+                    <dd className="mt-1 font-display text-[20px] leading-none text-fg">{stat.value}</dd>
+                  </div>
+                ))}
+              </dl>
+
+              <ul className="mt-auto flex flex-wrap gap-1.5 border-t border-line/60 px-5 py-3">
+                {hub.tools.slice(0, 5).map((tool) => (
+                  <li key={tool.key}>
+                    <Link
+                      href={tool.href}
+                      className="inline-flex items-center gap-1.5 rounded-2 border border-line px-2.5 py-1 text-[11.5px] text-fg-muted transition-colors hover:border-[var(--accent)]/45 hover:text-fg"
+                    >
+                      <Icon name={adminIcon(tool.icon)} size={12} />
+                      {tool.label}
+                    </Link>
+                  </li>
+                ))}
+                {hub.tools.length > 5 ? (
+                  <li>
+                    <Link href={hub.section.hub} className="inline-flex items-center rounded-2 px-2 py-1 text-[11.5px] text-fg-dim hover:text-fg">
+                      +{hub.tools.length - 5} more
+                    </Link>
+                  </li>
+                ) : null}
+              </ul>
+            </article>
+          ))}
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/" target="_blank" className="inline-flex items-center gap-1.5 rounded-2 border border-line px-3 py-1.5 text-[12.5px] text-fg-muted transition-colors hover:border-[var(--accent)]/50 hover:text-fg">
-            <Icon name="external" size={13} /> View site
-          </Link>
-          <Link href="/media" target="_blank" className="inline-flex items-center gap-1.5 rounded-2 border border-line px-3 py-1.5 text-[12.5px] text-fg-muted transition-colors hover:border-[var(--accent)]/50 hover:text-fg">
-            <Icon name="film" size={13} /> /media
-          </Link>
-          <Link href="/tech-portfolio" target="_blank" className="inline-flex items-center gap-1.5 rounded-2 border border-line px-3 py-1.5 text-[12.5px] text-fg-muted transition-colors hover:border-[var(--accent)]/50 hover:text-fg">
-            <Icon name="code" size={13} /> /tech-portfolio
-          </Link>
-        </div>
-      </header>
+      </section>
 
       <Panel
         title={attention.length ? 'Before launch' : 'Nothing is blocking you'}
-        hint={attention.length ? 'Each item is a fact only you can confirm. They are listed in the order they affect the public site.' : 'The checklist is clear — publish changes as you get them.'}
+        hint={
+          attention.length
+            ? 'Each item is a fact only you can confirm. They are listed in the order they affect the public site.'
+            : 'The checklist is clear — publish changes as you get them.'
+        }
       >
         {attention.length === 0 ? (
           <p className="flex items-center gap-2 text-[13px] text-ok-400">
@@ -76,7 +149,10 @@ export default async function DashboardPage() {
                   <span className="block text-[13px] text-fg">{item.label}</span>
                   <span className="mt-0.5 block text-[12px] leading-snug text-fg-dim">{item.detail}</span>
                 </span>
-                <Link href={item.href} className="shrink-0 rounded-2 border border-line px-2 py-1 text-[11.5px] text-fg-muted transition-colors hover:border-[var(--accent)]/50 hover:text-fg">
+                <Link
+                  href={item.href}
+                  className="shrink-0 rounded-2 border border-line px-2 py-1 text-[11.5px] text-fg-muted transition-colors hover:border-[var(--accent)]/50 hover:text-fg"
+                >
                   Open
                 </Link>
               </li>
@@ -84,22 +160,6 @@ export default async function DashboardPage() {
           </ul>
         )}
       </Panel>
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {TILES.map((tile) => (
-          <Link
-            key={tile.key}
-            href={tile.href}
-            className="group rounded-4 border border-line bg-ink-900/60 px-4 py-3.5 transition-colors hover:border-[var(--accent)]/45"
-          >
-            <span className="flex items-center gap-2 text-fg-dim">
-              <Icon name={adminIcon(tile.icon)} size={14} className="transition-colors group-hover:text-[var(--accent)]" />
-              <span className="text-[11px] uppercase tracking-[0.14em]">{tile.label}</span>
-            </span>
-            <span className="mt-2 block font-display text-[26px] leading-none text-fg">{counts[tile.key] ?? 0}</span>
-          </Link>
-        ))}
-      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel
@@ -117,9 +177,9 @@ export default async function DashboardPage() {
             <ul className="space-y-2.5">
               {inbox.rows.slice(0, 5).map((row) => (
                 <li key={row.id} className="flex items-start gap-3">
-                  <span className="mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
+                  <span className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
                   <span className="min-w-0 flex-1">
-                    <Link href={`/admin/submissions`} className="block truncate text-[13px] text-fg hover:underline">
+                    <Link href="/admin/submissions" className="block truncate text-[13px] text-fg hover:underline">
                       {row.name} <span className="text-fg-dim">· {row.subject}</span>
                     </Link>
                     <span className="mt-0.5 line-clamp-1 block text-[12px] text-fg-dim">{row.message || 'No message'}</span>
@@ -133,9 +193,7 @@ export default async function DashboardPage() {
 
         <Panel title="Recently changed" hint="Every publish, edit and deletion in this workspace.">
           {activity.length === 0 ? (
-            <p className="text-[12.5px] text-fg-dim">
-              Nothing recorded yet. The log fills up as soon as you change something here.
-            </p>
+            <p className="text-[12.5px] text-fg-dim">Nothing recorded yet. The log fills up as soon as you change something here.</p>
           ) : (
             <ul className="space-y-2">
               {activity.map((row) => (
@@ -150,33 +208,6 @@ export default async function DashboardPage() {
           )}
         </Panel>
       </div>
-
-      <Panel title="Start here" hint="The four things that make the platform yours rather than a template." pad={false}>
-        <div className="grid divide-y divide-line/60 sm:grid-cols-2 sm:divide-y-0 sm:[&>*]:border-line/60 lg:grid-cols-4">
-          {[
-            { href: '/admin/settings?group=brand', icon: 'palette', label: 'Set the brand words', hint: 'Name, taglines, share image' },
-            { href: '/admin/media_library', icon: 'upload', label: 'Upload real media', hint: 'Covers, posters, gallery stills' },
-            { href: '/admin/media_projects', icon: 'camera', label: 'Replace the sample projects', hint: 'Two media, two tech, then publish' },
-            { href: '/admin/navigation', icon: 'menu', label: 'Order the menus', hint: 'Header and footer per experience' },
-          ].map((item) => (
-            <Link key={item.href} href={item.href} className="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-ink-800/40 sm:border-r sm:last:border-r-0">
-              <Icon name={adminIcon(item.icon)} size={16} className="mt-[2px] text-[var(--accent)]" />
-              <span>
-                <span className="block text-[13px] text-fg">{item.label}</span>
-                <span className="mt-0.5 block text-[11.5px] text-fg-dim">{item.hint}</span>
-              </span>
-            </Link>
-          ))}
-        </div>
-      </Panel>
-
-      <p className="flex items-center gap-2 text-[11.5px] text-fg-dim">
-        <Pill tone="neutral">
-          <StatusPill status={String(settings['system.maintenance_mode'] ?? '') === 'true' ? 'new' : 'published'} />
-          {String(settings['system.maintenance_mode'] ?? '') === 'true' ? 'Maintenance mode is on' : 'Public site is live'}
-        </Pill>
-        Saved changes appear immediately: publishing revalidates the cached pages.
-      </p>
     </div>
   );
 }
